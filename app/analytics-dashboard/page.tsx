@@ -84,58 +84,39 @@ const AnalyticsDashboardPage = () => {
     }
   };
 
-  const downloadAnalyticsAsCsv = () => {
-    if (!analytics) return;
-    const csvContent = 'Date,Views,Clicks,Conversions\n' + analytics.data.map((item) => `${item.date},${item.views},${item.clicks},${item.conversions}`).join('\n');
-    const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'analytics.csv');
-    link.click();
-  };
-
   return (
     <PageLayout>
-      <div className="flex flex-col md:flex-row">
-        <div className="w-full md:w-1/3">
+      {isLoadingLeadMagnets ? (
+        <div>Loading lead magnets...</div>
+      ) : (
+        <div>
           {leadMagnets.map((leadMagnet) => (
             <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} onSelect={handleLeadMagnetSelect} />
           ))}
-        </div>
-        <div className="w-full md:w-2/3">
           {selectedLeadMagnet && (
             <div>
-              <div className="flex justify-between mb-4">
-                <DatePicker
-                  selectsRange={true}
-                  startDate={dateRange.startDate}
-                  endDate={dateRange.endDate}
-                  onChange={handleDateRangeChange}
-                  className="w-full"
-                />
-                <select
-                  value={predefinedDateRange}
-                  onChange={(e) => handlePredefinedDateRangeChange(e.target.value)}
-                  className="w-full md:w-1/3"
-                >
-                  <option value="">Select Date Range</option>
-                  <option value="last7Days">Last 7 Days</option>
-                  <option value="last30Days">Last 30 Days</option>
-                  <option value="yesterday">Yesterday</option>
-                </select>
-                <button onClick={downloadAnalyticsAsCsv} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                  Download as CSV
-                </button>
-              </div>
+              <DatePicker
+                selectsRange={true}
+                startDate={dateRange.startDate}
+                endDate={dateRange.endDate}
+                onChange={handleDateRangeChange}
+                dateFormat="yyyy-MM-dd"
+              />
+              <select value={predefinedDateRange} onChange={(e) => handlePredefinedDateRangeChange(e.target.value)}>
+                <option value="">Select a date range</option>
+                <option value="last7Days">Last 7 days</option>
+                <option value="last30Days">Last 30 days</option>
+                <option value="yesterday">Yesterday</option>
+              </select>
               {isLoadingAnalytics ? (
-                <div>Loading...</div>
+                <div>Loading analytics...</div>
               ) : (
-                <AnalyticsChart analytics={analytics} />
+                analytics && <AnalyticsChart analytics={analytics} />
               )}
             </div>
           )}
         </div>
-      </div>
+      )}
     </PageLayout>
   );
 };
