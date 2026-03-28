@@ -5,39 +5,11 @@ use client;
 @tailwind utilities;
 
 @layer base {
-  /* Load fonts asynchronously using the font-display: swap property */
+  /* Load fonts asynchronously using the font-display: swap property and a font CDN */
   @font-face {
     font-family: 'Inter';
-    src: url('/fonts/Inter-Regular.woff2') format('woff2'),
-         url('/fonts/Inter-Regular.ttf') format('truetype');
+    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: 'Inter';
-    src: url('/fonts/Inter-Medium.woff2') format('woff2'),
-         url('/fonts/Inter-Medium.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: 'Inter';
-    src: url('/fonts/Inter-SemiBold.woff2') format('woff2'),
-         url('/fonts/Inter-SemiBold.ttf') format('truetype');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: 'Inter';
-    src: url('/fonts/Inter-Bold.woff2') format('woff2'),
-         url('/fonts/Inter-Bold.ttf') format('truetype');
-    font-weight: 700;
     font-style: normal;
     font-display: swap;
   }
@@ -188,13 +160,5 @@ use client;
 
   .bg-gray-700 {
     @apply bg-gray-700;
-  }
-
-  .bg-gray-800 {
-    @apply bg-gray-800;
-  }
-
-  .bg-gray-900 {
-    @apply bg-gray-900;
   }
 }

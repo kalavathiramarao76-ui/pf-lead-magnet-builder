@@ -100,7 +100,7 @@ const AnalyticsDashboardPage = () => {
                 startDate={dateRange.startDate}
                 endDate={dateRange.endDate}
                 onChange={handleDateRangeChange}
-                dateFormat="yyyy-MM-dd"
+                withPortal
               />
               <select value={predefinedDateRange} onChange={(e) => handlePredefinedDateRangeChange(e.target.value)}>
                 <option value="">Select a date range</option>
@@ -109,7 +109,7 @@ const AnalyticsDashboardPage = () => {
                 <option value="yesterday">Yesterday</option>
               </select>
               {isLoadingAnalytics ? (
-                <div>Loading analytics...</div>
+                <div>Loading analytics chart...</div>
               ) : (
                 analytics && <AnalyticsChart analytics={analytics} />
               )}
