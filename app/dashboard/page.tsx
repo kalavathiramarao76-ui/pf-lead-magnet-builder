@@ -19,6 +19,8 @@ const DashboardPage = () => {
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const { getItem, setItem } = useLocalStorage();
 
@@ -91,82 +93,67 @@ const DashboardPage = () => {
     return () => clearTimeout(timeoutId);
   };
 
-  const handleDragStart = (event, index, type) => {
-    setDragging({ index, type });
+  const handleFilterTypeChange = (event) => {
+    setFilterType(event.target.value);
   };
 
-  const handleDragOver = (event, index, type) => {
-    setDragOver({ index, type });
+  const handleFilterStatusChange = (event) => {
+    setFilterStatus(event.target.value);
   };
 
-  const handleDrop = (event) => {
-    event.preventDefault();
-    if (dragging && dragOver) {
-      if (dragging.type === 'leadMagnet') {
-        const newLeadMagnets = [...leadMagnets];
-        const leadMagnet = newLeadMagnets.splice(dragging.index, 1)[0];
-        newLeadMagnets.splice(dragOver.index, 0, leadMagnet);
-        setLeadMagnets(newLeadMagnets);
-        setItem('leadMagnets', JSON.stringify(newLeadMagnets));
-      } else if (dragging.type === 'template') {
-        const newTemplates = [...templates];
-        const template = newTemplates.splice(dragging.index, 1)[0];
-        newTemplates.splice(dragOver.index, 0, template);
-        setTemplates(newTemplates);
-        setItem('templates', JSON.stringify(newTemplates));
-      }
+  const filteredResults = () => {
+    if (filterType === 'all' && filterStatus === 'all') {
+      return searchResults;
     }
-    setDragging(null);
-    setDragOver(null);
+
+    return searchResults.filter((item) => {
+      if (filterType !== 'all' && item.type !== filterType) {
+        return false;
+      }
+
+      if (filterStatus !== 'all' && item.status !== filterStatus) {
+        return false;
+      }
+
+      return true;
+    });
   };
 
   return (
     <div>
-      <h1>Lead Magnet Builder</h1>
-      <div>
-        <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
-        <button onClick={handleCreateTemplate}>Create Template</button>
-      </div>
       <input
         type="search"
         value={searchTerm}
         onChange={handleSearch}
-        placeholder="Search"
+        placeholder="Search lead magnets and templates"
       />
+      <select value={filterType} onChange={handleFilterTypeChange}>
+        <option value="all">All types</option>
+        <option value="leadMagnet">Lead Magnets</option>
+        <option value="template">Templates</option>
+      </select>
+      <select value={filterStatus} onChange={handleFilterStatusChange}>
+        <option value="all">All statuses</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
       {isSearching ? (
-        <div>Loading...</div>
+        <p>Searching...</p>
       ) : (
         <div>
-          <h2>Lead Magnets</h2>
-          <div
-            onDragOver={(event) => handleDragOver(event, 0, 'leadMagnet')}
-            onDrop={handleDrop}
-          >
-            {leadMagnets.map((leadMagnet, index) => (
-              <LeadMagnetCard
-                key={leadMagnet.id}
-                leadMagnet={leadMagnet}
-                onDragStart={(event) => handleDragStart(event, index, 'leadMagnet')}
-                draggable
-              />
-            ))}
-          </div>
-          <h2>Templates</h2>
-          <div
-            onDragOver={(event) => handleDragOver(event, 0, 'template')}
-            onDrop={handleDrop}
-          >
-            {templates.map((template, index) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onDragStart={(event) => handleDragStart(event, index, 'template')}
-                draggable
-              />
-            ))}
-          </div>
+          {filteredResults().map((item) => (
+            <div key={item.id}>
+              {item.type === 'leadMagnet' ? (
+                <LeadMagnetCard leadMagnet={item} />
+              ) : (
+                <TemplateCard template={item} />
+              )}
+            </div>
+          ))}
         </div>
       )}
+      <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
+      <button onClick={handleCreateTemplate}>Create Template</button>
       <AnalyticsCard analytics={analytics} />
       <SettingsCard settings={settings} />
       <PricingCard pricing={pricing} />
