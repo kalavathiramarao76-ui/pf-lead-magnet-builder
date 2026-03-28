@@ -100,20 +100,18 @@ const DashboardPage = () => {
   };
 
   const handleDrop = (event) => {
+    event.preventDefault();
     if (dragging && dragOver) {
-      const { index: dragIndex, type: dragType } = dragging;
-      const { index: overIndex, type: overType } = dragOver;
-
-      if (dragType === 'leadMagnet' && overType === 'leadMagnet') {
+      if (dragging.type === 'leadMagnet') {
         const newLeadMagnets = [...leadMagnets];
-        const [removed] = newLeadMagnets.splice(dragIndex, 1);
-        newLeadMagnets.splice(overIndex, 0, removed);
+        const leadMagnet = newLeadMagnets.splice(dragging.index, 1)[0];
+        newLeadMagnets.splice(dragOver.index, 0, leadMagnet);
         setLeadMagnets(newLeadMagnets);
         setItem('leadMagnets', JSON.stringify(newLeadMagnets));
-      } else if (dragType === 'template' && overType === 'template') {
+      } else if (dragging.type === 'template') {
         const newTemplates = [...templates];
-        const [removed] = newTemplates.splice(dragIndex, 1);
-        newTemplates.splice(overIndex, 0, removed);
+        const template = newTemplates.splice(dragging.index, 1)[0];
+        newTemplates.splice(dragOver.index, 0, template);
         setTemplates(newTemplates);
         setItem('templates', JSON.stringify(newTemplates));
       }
@@ -122,16 +120,13 @@ const DashboardPage = () => {
     setDragOver(null);
   };
 
-  const handleDragEnd = () => {
-    setDragging(null);
-    setDragOver(null);
-  };
-
   return (
     <div>
       <h1>Lead Magnet Builder</h1>
-      <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
-      <button onClick={handleCreateTemplate}>Create Template</button>
+      <div>
+        <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
+        <button onClick={handleCreateTemplate}>Create Template</button>
+      </div>
       <input
         type="search"
         value={searchTerm}
@@ -139,41 +134,37 @@ const DashboardPage = () => {
         placeholder="Search"
       />
       {isSearching ? (
-        <div>
-          <h2>Search Results</h2>
-          {searchResults.map((result) => (
-            <div key={result.id}>
-              <h3>{result.name}</h3>
-              <p>{result.description}</p>
-            </div>
-          ))}
-        </div>
+        <div>Loading...</div>
       ) : (
         <div>
           <h2>Lead Magnets</h2>
-          {leadMagnets.map((leadMagnet, index) => (
-            <LeadMagnetCard
-              key={leadMagnet.id}
-              leadMagnet={leadMagnet}
-              onDragStart={(event) => handleDragStart(event, index, 'leadMagnet')}
-              onDragOver={(event) => handleDragOver(event, index, 'leadMagnet')}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              draggable
-            />
-          ))}
+          <div
+            onDragOver={(event) => handleDragOver(event, 0, 'leadMagnet')}
+            onDrop={handleDrop}
+          >
+            {leadMagnets.map((leadMagnet, index) => (
+              <LeadMagnetCard
+                key={leadMagnet.id}
+                leadMagnet={leadMagnet}
+                onDragStart={(event) => handleDragStart(event, index, 'leadMagnet')}
+                draggable
+              />
+            ))}
+          </div>
           <h2>Templates</h2>
-          {templates.map((template, index) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onDragStart={(event) => handleDragStart(event, index, 'template')}
-              onDragOver={(event) => handleDragOver(event, index, 'template')}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              draggable
-            />
-          ))}
+          <div
+            onDragOver={(event) => handleDragOver(event, 0, 'template')}
+            onDrop={handleDrop}
+          >
+            {templates.map((template, index) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onDragStart={(event) => handleDragStart(event, index, 'template')}
+                draggable
+              />
+            ))}
+          </div>
         </div>
       )}
       <AnalyticsCard analytics={analytics} />
