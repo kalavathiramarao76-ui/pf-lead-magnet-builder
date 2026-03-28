@@ -99,6 +99,21 @@ use client;
   button:hover {
     @apply bg-blue-800;
   }
+
+  img {
+    @apply max-w-full h-auto;
+  }
+
+  img[alt=""] {
+    @apply hidden;
+  }
+
+  .sr-only {
+    @apply absolute -top-20 -left-20;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+  }
 }
 
 @layer components {
@@ -220,7 +235,5 @@ use client;
 }
 
 @layer utilities {
-  .dark-mode {
-    @apply bg-gray-900 text-gray-100;
-  }
+  .
 }

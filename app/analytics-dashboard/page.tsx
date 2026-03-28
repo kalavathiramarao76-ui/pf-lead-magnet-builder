@@ -15,31 +15,39 @@ const AnalyticsDashboardPage = () => {
     startDate: null,
     endDate: null,
   });
+  const [isLoadingLeadMagnets, setIsLoadingLeadMagnets] = useState(true);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
   useEffect(() => {
     const storedLeadMagnets = localStorage.getItem('leadMagnets');
     if (storedLeadMagnets) {
       setLeadMagnets(JSON.parse(storedLeadMagnets));
+      setIsLoadingLeadMagnets(false);
     } else {
       getLeadMagnets().then((data) => {
         setLeadMagnets(data);
         localStorage.setItem('leadMagnets', JSON.stringify(data));
+        setIsLoadingLeadMagnets(false);
       });
     }
   }, []);
 
   const handleLeadMagnetSelect = (leadMagnet: LeadMagnet) => {
     setSelectedLeadMagnet(leadMagnet);
+    setIsLoadingAnalytics(true);
     getLeadMagnetAnalytics(leadMagnet.id, dateRange.startDate, dateRange.endDate).then((data) => {
       setAnalytics(data);
+      setIsLoadingAnalytics(false);
     });
   };
 
   const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
     setDateRange({ startDate, endDate });
     if (selectedLeadMagnet) {
+      setIsLoadingAnalytics(true);
       getLeadMagnetAnalytics(selectedLeadMagnet.id, startDate, endDate).then((data) => {
         setAnalytics(data);
+        setIsLoadingAnalytics(false);
       });
     }
   };
@@ -50,17 +58,21 @@ const AnalyticsDashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <h2 className="text-2xl font-bold mb-2">Lead Magnets</h2>
-          <ul>
-            {leadMagnets.map((leadMagnet) => (
-              <li key={leadMagnet.id}>
-                <LeadMagnetCard
-                  leadMagnet={leadMagnet}
-                  isSelected={selectedLeadMagnet === leadMagnet}
-                  onSelect={() => handleLeadMagnetSelect(leadMagnet)}
-                />
-              </li>
-            ))}
-          </ul>
+          {isLoadingLeadMagnets ? (
+            <div>Loading lead magnets...</div>
+          ) : (
+            <ul>
+              {leadMagnets.map((leadMagnet) => (
+                <li key={leadMagnet.id}>
+                  <LeadMagnetCard
+                    leadMagnet={leadMagnet}
+                    isSelected={selectedLeadMagnet === leadMagnet}
+                    onSelect={() => handleLeadMagnetSelect(leadMagnet)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="flex flex-col">
           {selectedLeadMagnet && (
@@ -82,10 +94,12 @@ const AnalyticsDashboardPage = () => {
                 onChange={(e) => handleDateRangeChange(dateRange.startDate, new Date(e.target.value))}
                 className="ml-2"
               />
+              {isLoadingAnalytics ? (
+                <div>Loading analytics...</div>
+              ) : (
+                <AnalyticsChart analytics={analytics} />
+              )}
             </div>
-          )}
-          {selectedLeadMagnet && analytics && (
-            <AnalyticsChart analytics={analytics} />
           )}
         </div>
       </div>
