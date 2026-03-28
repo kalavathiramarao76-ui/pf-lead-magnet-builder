@@ -23,6 +23,8 @@ const DashboardPage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortOrder, setSortOrder] = useState('asc');
   const [sortBy, setSortBy] = useState('name');
+  const [leadMagnetFilter, setLeadMagnetFilter] = useState('all');
+  const [templateFilter, setTemplateFilter] = useState('all');
 
   const { getItem, setItem } = useLocalStorage();
 
@@ -84,51 +86,40 @@ const DashboardPage = () => {
       const results = [...leadMagnets, ...templates].filter((item) => {
         const itemName = item.name.toLowerCase();
         const itemDescription = item.description.toLowerCase();
-        return (
-          itemName.includes(searchTerm.toLowerCase()) ||
-          itemDescription.includes(searchTerm.toLowerCase())
-        );
+        return itemName.includes(searchTerm.toLowerCase()) || itemDescription.includes(searchTerm.toLowerCase());
       });
-
-      const filteredResults = results.filter((item) => {
-        if (filterType === 'all') return true;
-        if (filterType === 'leadMagnet' && item.id >= 0) return true;
-        if (filterType === 'template' && item.id >= 0) return true;
-        return false;
-      });
-
-      const sortedResults = filteredResults.sort((a, b) => {
-        if (sortBy === 'name') {
-          if (sortOrder === 'asc') return a.name.localeCompare(b.name);
-          return b.name.localeCompare(a.name);
-        }
-        if (sortBy === 'description') {
-          if (sortOrder === 'asc') return a.description.localeCompare(b.description);
-          return b.description.localeCompare(a.description);
-        }
-        return 0;
-      });
-
-      setSearchResults(sortedResults);
+      setSearchResults(results);
     }, 500);
     return () => clearTimeout(timeoutId);
   };
 
-  const handleFilterTypeChange = (event) => {
-    setFilterType(event.target.value);
+  const handleFilterLeadMagnet = (filter) => {
+    setLeadMagnetFilter(filter);
   };
 
-  const handleFilterStatusChange = (event) => {
-    setFilterStatus(event.target.value);
+  const handleFilterTemplate = (filter) => {
+    setTemplateFilter(filter);
   };
 
-  const handleSortOrderChange = (event) => {
-    setSortOrder(event.target.value);
-  };
+  const filteredLeadMagnets = leadMagnets.filter((leadMagnet) => {
+    if (leadMagnetFilter === 'all') {
+      return true;
+    } else if (leadMagnetFilter === 'active') {
+      return leadMagnet.status === 'active';
+    } else if (leadMagnetFilter === 'inactive') {
+      return leadMagnet.status === 'inactive';
+    }
+  });
 
-  const handleSortByChange = (event) => {
-    setSortBy(event.target.value);
-  };
+  const filteredTemplates = templates.filter((template) => {
+    if (templateFilter === 'all') {
+      return true;
+    } else if (templateFilter === 'active') {
+      return template.status === 'active';
+    } else if (templateFilter === 'inactive') {
+      return template.status === 'inactive';
+    }
+  });
 
   return (
     <div>
@@ -138,48 +129,40 @@ const DashboardPage = () => {
         onChange={handleSearch}
         placeholder="Search lead magnets and templates"
       />
-      <select value={filterType} onChange={handleFilterTypeChange}>
-        <option value="all">All</option>
-        <option value="leadMagnet">Lead Magnets</option>
-        <option value="template">Templates</option>
+      <select value={leadMagnetFilter} onChange={(e) => handleFilterLeadMagnet(e.target.value)}>
+        <option value="all">All Lead Magnets</option>
+        <option value="active">Active Lead Magnets</option>
+        <option value="inactive">Inactive Lead Magnets</option>
       </select>
-      <select value={filterStatus} onChange={handleFilterStatusChange}>
-        <option value="all">All</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-      </select>
-      <select value={sortOrder} onChange={handleSortOrderChange}>
-        <option value="asc">Ascending</option>
-        <option value="desc">Descending</option>
-      </select>
-      <select value={sortBy} onChange={handleSortByChange}>
-        <option value="name">Name</option>
-        <option value="description">Description</option>
+      <select value={templateFilter} onChange={(e) => handleFilterTemplate(e.target.value)}>
+        <option value="all">All Templates</option>
+        <option value="active">Active Templates</option>
+        <option value="inactive">Inactive Templates</option>
       </select>
       {isSearching ? (
         <div>
-          {searchResults.map((item) => (
-            <div key={item.id}>
-              <LeadMagnetCard leadMagnet={item} />
-              <TemplateCard template={item} />
+          {searchResults.map((result) => (
+            <div key={result.id}>
+              <h2>{result.name}</h2>
+              <p>{result.description}</p>
             </div>
           ))}
         </div>
       ) : (
         <div>
-          {leadMagnets.map((leadMagnet) => (
+          {filteredLeadMagnets.map((leadMagnet) => (
             <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
           ))}
-          {templates.map((template) => (
+          {filteredTemplates.map((template) => (
             <TemplateCard key={template.id} template={template} />
           ))}
-          <AnalyticsCard analytics={analytics} />
-          <SettingsCard settings={settings} />
-          <PricingCard pricing={pricing} />
         </div>
       )}
       <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
       <button onClick={handleCreateTemplate}>Create Template</button>
+      <AnalyticsCard analytics={analytics} />
+      <SettingsCard settings={settings} />
+      <PricingCard pricing={pricing} />
     </div>
   );
 };

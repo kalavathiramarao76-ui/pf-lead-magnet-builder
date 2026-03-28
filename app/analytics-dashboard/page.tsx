@@ -21,6 +21,11 @@ const AnalyticsDashboardPage = () => {
   const [predefinedDateRange, setPredefinedDateRange] = useState<string | null>(null);
   const [isLoadingLeadMagnets, setIsLoadingLeadMagnets] = useState(true);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+  const [chartType, setChartType] = useState<string>('line');
+  const [chartOptions, setChartOptions] = useState({
+    displayLegend: true,
+    displayGrid: true,
+  });
 
   useEffect(() => {
     const storedLeadMagnets = localStorage.getItem('leadMagnets');
@@ -71,56 +76,21 @@ const AnalyticsDashboardPage = () => {
     });
   };
 
-  const handleExportToCSV = () => {
-    const csvData = Object.keys(analytics).map((leadMagnetId) => {
-      const leadMagnetAnalytics = analytics[leadMagnetId];
-      return Object.keys(leadMagnetAnalytics).map((metric) => {
-        return `${leadMagnetId},${metric},${leadMagnetAnalytics[metric]}`;
-      });
-    }).flat();
-    const csvString = ['Lead Magnet ID,Metric,Value', ...csvData].join('\n');
-    const csvBlob = new Blob([csvString], { type: 'text/csv' });
-    const csvUrl = URL.createObjectURL(csvBlob);
-    const csvLink = document.createElement('a');
-    csvLink.href = csvUrl;
-    csvLink.download = 'analytics_data.csv';
-    csvLink.click();
+  const handleChartTypeChange = (type: string) => {
+    setChartType(type);
   };
 
-  const handleExportToExcel = () => {
-    const excelData = Object.keys(analytics).map((leadMagnetId) => {
-      const leadMagnetAnalytics = analytics[leadMagnetId];
-      return Object.keys(leadMagnetAnalytics).map((metric) => {
-        return { LeadMagnetID: leadMagnetId, Metric: metric, Value: leadMagnetAnalytics[metric] };
-      });
-    }).flat();
-    const excelBlob = new Blob([JSON.stringify(excelData)], { type: 'application/json' });
-    const excelUrl = URL.createObjectURL(excelBlob);
-    const excelLink = document.createElement('a');
-    excelLink.href = excelUrl;
-    excelLink.download = 'analytics_data.json';
-    excelLink.click();
+  const handleChartOptionsChange = (options: any) => {
+    setChartOptions(options);
   };
 
   return (
     <PageLayout>
-      <div>
-        <h1>Lead Magnet Builder Analytics Dashboard</h1>
+      {isLoadingLeadMagnets ? (
+        <Loader />
+      ) : (
         <div>
-          <DatePicker
-            selectsRange={true}
-            startDate={dateRange.startDate}
-            endDate={dateRange.endDate}
-            onChange={(update) => {
-              handleDateRangeChange(update[0], update[1]);
-            }}
-          />
-          <button onClick={handleExportToCSV}>Export to CSV</button>
-          <button onClick={handleExportToExcel}>Export to Excel</button>
-        </div>
-        {isLoadingLeadMagnets ? (
-          <Loader />
-        ) : (
+          <h1>Lead Magnet Builder Analytics Dashboard</h1>
           <div>
             {leadMagnets.map((leadMagnet) => (
               <LeadMagnetCard
@@ -131,17 +101,59 @@ const AnalyticsDashboardPage = () => {
               />
             ))}
           </div>
-        )}
-        {isLoadingAnalytics ? (
-          <Loader />
-        ) : (
           <div>
-            {selectedLeadMagnets.map((leadMagnet) => (
-              <AnalyticsChart key={leadMagnet.id} analytics={analytics[leadMagnet.id]} />
-            ))}
+            <DatePicker
+              selectsRange={true}
+              startDate={dateRange.startDate}
+              endDate={dateRange.endDate}
+              onChange={(update) => {
+                const [startDate, endDate] = update;
+                handleDateRangeChange(startDate, endDate);
+              }}
+            />
           </div>
-        )}
-      </div>
+          <div>
+            <select value={chartType} onChange={(e) => handleChartTypeChange(e.target.value)}>
+              <option value="line">Line Chart</option>
+              <option value="bar">Bar Chart</option>
+              <option value="pie">Pie Chart</option>
+            </select>
+            <div>
+              <label>
+                Display Legend:
+                <input
+                  type="checkbox"
+                  checked={chartOptions.displayLegend}
+                  onChange={(e) => handleChartOptionsChange({ ...chartOptions, displayLegend: e.target.checked })}
+                />
+              </label>
+              <label>
+                Display Grid:
+                <input
+                  type="checkbox"
+                  checked={chartOptions.displayGrid}
+                  onChange={(e) => handleChartOptionsChange({ ...chartOptions, displayGrid: e.target.checked })}
+                />
+              </label>
+            </div>
+          </div>
+          {isLoadingAnalytics ? (
+            <Loader />
+          ) : (
+            <div>
+              {selectedLeadMagnets.map((leadMagnet) => (
+                <AnalyticsChart
+                  key={leadMagnet.id}
+                  leadMagnet={leadMagnet}
+                  analytics={analytics[leadMagnet.id]}
+                  chartType={chartType}
+                  chartOptions={chartOptions}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </PageLayout>
   );
 };
