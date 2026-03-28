@@ -20,7 +20,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold;
-    color: #333;
+    color: #333 dark:text-gray-100;
   }
 
   h1 {
@@ -49,7 +49,7 @@
 
   p {
     @apply text-base md:text-lg;
-    color: #666;
+    color: #666 dark:text-gray-300;
   }
 
   a {
@@ -86,6 +86,33 @@
     width: 1px;
     height: 1px;
   }
+
+  .dark-mode-toggle {
+    @apply relative inline-block w-10 mr-2 align-middle select-none;
+  }
+
+  .dark-mode-toggle input {
+    @apply absolute block w-6 h-6 rounded-full bg-white shadow-md cursor-pointer;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s ease;
+  }
+
+  .dark-mode-toggle input:checked {
+    @apply right-0;
+  }
+
+  .dark-mode-toggle input:focus {
+    @apply outline-none ring-2 ring-offset-2 ring-blue-600;
+  }
+
+  .dark-mode-toggle span {
+    @apply block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer;
+  }
+
+  .dark-mode-toggle span:before {
+    @apply block h-6 rounded-full bg-white;
+  }
 }
 
 @layer components {
@@ -115,6 +142,11 @@
 
   .text-center {
     @apply text-center;
+  }
+
+  .dark-mode-toggle-label {
+    @apply text-base md:text-lg;
+    color: #666 dark:text-gray-300;
   }
 }
 

@@ -6,6 +6,8 @@ import { AnalyticsCard } from '../components/AnalyticsCard';
 import { SettingsCard } from '../components/SettingsCard';
 import { PricingCard } from '../components/PricingCard';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '../components/Accordion';
+import { Select } from '../components/Select';
 
 const DashboardPage = () => {
   const pathname = usePathname();
@@ -83,52 +85,63 @@ const DashboardPage = () => {
   }, [templateFilter, templates]);
 
   const handleCreateLeadMagnet = () => {
-    const newLeadMagnet = {
-      name: 'New Lead Magnet',
-      description: 'New lead magnet description',
-    };
+    const newLeadMagnet = {};
+
     setLeadMagnets([...leadMagnets, newLeadMagnet]);
     setItem('leadMagnets', JSON.stringify([...leadMagnets, newLeadMagnet]));
   };
 
+  const leadMagnetFilterOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'published', label: 'Published' },
+    { value: 'draft', label: 'Draft' },
+  ];
+
+  const templateFilterOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'used', label: 'Used' },
+    { value: 'unused', label: 'Unused' },
+  ];
+
   return (
-    <div className="dashboard-container">
-      <div className="header-section">
-        <h1>Lead Magnet Builder Dashboard</h1>
-        <button onClick={handleCreateLeadMagnet}>Create New Lead Magnet</button>
+    <div>
+      <h1>Lead Magnet Builder Dashboard</h1>
+      <Accordion>
+        <AccordionItem>
+          <AccordionButton>Lead Magnet Filters</AccordionButton>
+          <AccordionPanel>
+            <Select
+              value={leadMagnetFilter}
+              onChange={(e) => setLeadMagnetFilter(e.target.value)}
+              options={leadMagnetFilterOptions}
+            />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Template Filters</AccordionButton>
+          <AccordionPanel>
+            <Select
+              value={templateFilter}
+              onChange={(e) => setTemplateFilter(e.target.value)}
+              options={templateFilterOptions}
+            />
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
+      <div>
+        {filteredLeadMagnets.map((leadMagnet) => (
+          <LeadMagnetCard key={leadMagnet.name} leadMagnet={leadMagnet} />
+        ))}
       </div>
-      <div className="main-section">
-        <div className="lead-magnets-section">
-          <h2>Lead Magnets</h2>
-          <div className="lead-magnets-grid">
-            {filteredLeadMagnets.map((leadMagnet, index) => (
-              <LeadMagnetCard key={index} leadMagnet={leadMagnet} />
-            ))}
-          </div>
-        </div>
-        <div className="templates-section">
-          <h2>Templates</h2>
-          <div className="templates-grid">
-            {filteredTemplates.map((template, index) => (
-              <TemplateCard key={index} template={template} />
-            ))}
-          </div>
-        </div>
+      <div>
+        {filteredTemplates.map((template) => (
+          <TemplateCard key={template.name} template={template} />
+        ))}
       </div>
-      <div className="sidebar-section">
-        <div className="analytics-section">
-          <h2>Analytics</h2>
-          <AnalyticsCard analytics={analytics} />
-        </div>
-        <div className="settings-section">
-          <h2>Settings</h2>
-          <SettingsCard settings={settings} />
-        </div>
-        <div className="pricing-section">
-          <h2>Pricing</h2>
-          <PricingCard pricing={pricing} />
-        </div>
-      </div>
+      <AnalyticsCard analytics={analytics} />
+      <SettingsCard settings={settings} />
+      <PricingCard pricing={pricing} />
+      <button onClick={handleCreateLeadMagnet}>Create New Lead Magnet</button>
     </div>
   );
 };
