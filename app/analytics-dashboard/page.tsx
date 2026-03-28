@@ -76,142 +76,117 @@ const AnalyticsDashboardPage = () => {
     });
   };
 
-  const handlePredefinedDateRangeChange = (range: string) => {
-    setPredefinedDateRange(range);
-    let startDate: Date | null = null;
-    let endDate: Date | null = null;
-    switch (range) {
-      case 'today':
-        startDate = new Date();
-        endDate = new Date();
-        break;
-      case 'yesterday':
-        startDate = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-        endDate = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case 'last7Days':
-        startDate = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000);
-        endDate = new Date();
-        break;
-      case 'last30Days':
-        startDate = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000);
-        endDate = new Date();
-        break;
-      case 'thisMonth':
-        startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        endDate = new Date();
-        break;
-      case 'lastMonth':
-        startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
-        endDate = new Date(new Date().getFullYear(), new Date().getMonth(), 0);
-        break;
-      default:
-        break;
-    }
-    setDateRange({ startDate, endDate });
-    setIsLoadingAnalytics(true);
-    Promise.all(
-      selectedLeadMagnets.map((leadMagnet) =>
-        getLeadMagnetAnalytics(leadMagnet.id, startDate, endDate).then((data) => ({ [leadMagnet.id]: data }))
-      )
-    ).then((results) => {
-      const newAnalytics = results.reduce((acc, result) => ({ ...acc, ...result }), {});
-      setAnalytics(newAnalytics);
-      setIsLoadingAnalytics(false);
-    });
+  const exportToCSV = () => {
+    const csvData = Object.keys(analytics).map((leadMagnetId) => {
+      const leadMagnetAnalytics = analytics[leadMagnetId];
+      return Object.keys(leadMagnetAnalytics).map((date) => {
+        return {
+          'Lead Magnet ID': leadMagnetId,
+          Date: date,
+          'Page Views': leadMagnetAnalytics[date].pageViews,
+          'Unique Visitors': leadMagnetAnalytics[date].uniqueVisitors,
+          'Conversion Rate': leadMagnetAnalytics[date].conversionRate,
+        };
+      });
+    }).flat();
+    const csvString = [
+      ['Lead Magnet ID', 'Date', 'Page Views', 'Unique Visitors', 'Conversion Rate'],
+      ...csvData,
+    ]
+      .map((row) => row.join(','))
+      .join('\n');
+    const csvBlob = new Blob([csvString], { type: 'text/csv' });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const csvLink = document.createElement('a');
+    csvLink.href = csvUrl;
+    csvLink.download = 'analytics-data.csv';
+    csvLink.click();
+  };
+
+  const exportToExcel = () => {
+    const excelData = Object.keys(analytics).map((leadMagnetId) => {
+      const leadMagnetAnalytics = analytics[leadMagnetId];
+      return Object.keys(leadMagnetAnalytics).map((date) => {
+        return {
+          'Lead Magnet ID': leadMagnetId,
+          Date: date,
+          'Page Views': leadMagnetAnalytics[date].pageViews,
+          'Unique Visitors': leadMagnetAnalytics[date].uniqueVisitors,
+          'Conversion Rate': leadMagnetAnalytics[date].conversionRate,
+        };
+      });
+    }).flat();
+    const excelString = [
+      ['Lead Magnet ID', 'Date', 'Page Views', 'Unique Visitors', 'Conversion Rate'],
+      ...excelData,
+    ]
+      .map((row) => row.join('\t'))
+      .join('\n');
+    const excelBlob = new Blob([excelString], { type: 'text/tab-separated-values' });
+    const excelUrl = URL.createObjectURL(excelBlob);
+    const excelLink = document.createElement('a');
+    excelLink.href = excelUrl;
+    excelLink.download = 'analytics-data.xlsx';
+    excelLink.click();
   };
 
   return (
     <PageLayout>
-      <div className="flex flex-col md:flex-row justify-center items-center md:items-start md:space-x-4 space-y-4 md:space-y-0">
-        <div className="w-full md:w-1/2 xl:w-1/3 p-4 bg-white rounded-lg shadow-md">
-          <h2 className="text-lg font-bold mb-2">Lead Magnets</h2>
-          {isLoadingLeadMagnets ? (
-            <Loader />
-          ) : (
-            leadMagnets.map((leadMagnet) => (
-              <LeadMagnetCard
-                key={leadMagnet.id}
-                leadMagnet={leadMagnet}
-                isSelected={selectedLeadMagnets.includes(leadMagnet)}
-                onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
-              />
-            ))
-          )}
+      <div className="flex justify-between mb-4">
+        <h1 className="text-2xl font-bold">Lead Magnet Builder Analytics</h1>
+        <div className="flex justify-end">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={exportToCSV}
+          >
+            Export to CSV
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2"
+            onClick={exportToExcel}
+          >
+            Export to Excel
+          </button>
         </div>
-        <div className="w-full md:w-1/2 xl:w-1/3 p-4 bg-white rounded-lg shadow-md">
-          <h2 className="text-lg font-bold mb-2">Date Range</h2>
-          <div className="flex flex-col space-y-2">
-            <div className="flex space-x-2">
-              <button
-                className={`px-4 py-2 rounded-lg ${predefinedDateRange === 'today' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                onClick={() => handlePredefinedDateRangeChange('today')}
-              >
-                Today
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${predefinedDateRange === 'yesterday' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                onClick={() => handlePredefinedDateRangeChange('yesterday')}
-              >
-                Yesterday
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${predefinedDateRange === 'last7Days' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                onClick={() => handlePredefinedDateRangeChange('last7Days')}
-              >
-                Last 7 Days
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${predefinedDateRange === 'last30Days' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                onClick={() => handlePredefinedDateRangeChange('last30Days')}
-              >
-                Last 30 Days
-              </button>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                className={`px-4 py-2 rounded-lg ${predefinedDateRange === 'thisMonth' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                onClick={() => handlePredefinedDateRangeChange('thisMonth')}
-              >
-                This Month
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${predefinedDateRange === 'lastMonth' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                onClick={() => handlePredefinedDateRangeChange('lastMonth')}
-              >
-                Last Month
-              </button>
-            </div>
-            <div className="flex space-x-2">
-              <DatePicker
-                selected={dateRange.startDate}
-                onChange={(date) => handleDateRangeChange(date, dateRange.endDate)}
-                dateFormat="yyyy-MM-dd"
-                placeholderText="Start Date"
-              />
-              <DatePicker
-                selected={dateRange.endDate}
-                onChange={(date) => handleDateRangeChange(dateRange.startDate, date)}
-                dateFormat="yyyy-MM-dd"
-                placeholderText="End Date"
-              />
-            </div>
-          </div>
+      </div>
+      {isLoadingLeadMagnets ? (
+        <Loader />
+      ) : (
+        <div className="flex flex-wrap justify-center">
+          {leadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard
+              key={leadMagnet.id}
+              leadMagnet={leadMagnet}
+              isSelected={selectedLeadMagnets.includes(leadMagnet)}
+              onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+            />
+          ))}
         </div>
-        <div className="w-full md:w-1/2 xl:w-2/3 p-4 bg-white rounded-lg shadow-md">
-          <h2 className="text-lg font-bold mb-2">Analytics</h2>
+      )}
+      {selectedLeadMagnets.length > 0 && (
+        <div className="mt-4">
+          <DatePicker
+            selectsRange={true}
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            onChange={(update) => {
+              handleDateRangeChange(update[0], update[1]);
+            }}
+            isClearable={true}
+          />
           {isLoadingAnalytics ? (
             <Loader />
           ) : (
             <AnalyticsChart
               analytics={analytics}
-              leadMagnets={selectedLeadMagnets}
               chartType={chartType}
               chartOptions={chartOptions}
+              onChartTypeChange={(newChartType) => setChartType(newChartType)}
+              onChartOptionsChange={(newChartOptions) => setChartOptions(newChartOptions)}
             />
           )}
         </div>
-      </div>
+      )}
     </PageLayout>
   );
 };

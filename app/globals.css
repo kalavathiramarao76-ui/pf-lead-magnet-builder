@@ -53,8 +53,7 @@
   }
 
   a {
-    @apply text-blue-600;
-    transition: color 0.2s ease;
+    @apply text-blue-600 transition-colors;
   }
 
   a:hover {
@@ -62,12 +61,11 @@
   }
 
   button {
-    @apply bg-blue-600 text-white;
+    @apply bg-blue-600 text-white transition-colors;
     border: none;
     border-radius: 0.25rem;
     cursor: pointer;
     padding: 0.5rem 1rem;
-    transition: background-color 0.2s ease;
   }
 
   button:hover {

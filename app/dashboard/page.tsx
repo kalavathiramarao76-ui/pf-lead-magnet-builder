@@ -84,82 +84,50 @@ const DashboardPage = () => {
 
   const handleCreateLeadMagnet = () => {
     const newLeadMagnet = {
-      id: Date.now(),
       name: 'New Lead Magnet',
-      description: 'This is a new lead magnet',
+      description: 'New lead magnet description',
     };
-
-    setLeadMagnets((prevLeadMagnets) => [...prevLeadMagnets, newLeadMagnet]);
+    setLeadMagnets([...leadMagnets, newLeadMagnet]);
     setItem('leadMagnets', JSON.stringify([...leadMagnets, newLeadMagnet]));
   };
 
-  const handleCreateTemplate = () => {
-    const newTemplate = {
-      id: Date.now(),
-      name: 'New Template',
-      description: 'This is a new template',
-    };
-
-    setTemplates((prevTemplates) => [...prevTemplates, newTemplate]);
-    setItem('templates', JSON.stringify([...templates, newTemplate]));
-  };
-
-  const handleSearch = (event) => {
-    const searchTerm = event.target.value;
-    setSearchTerm(searchTerm);
-    setIsSearching(true);
-    const timeoutId = setTimeout(() => {
-      const results = [...leadMagnets, ...templates].filter((item) => item.name.includes(searchTerm));
-      setSearchResults(results);
-      setIsSearching(false);
-    }, 500);
-    return () => clearTimeout(timeoutId);
-  };
-
-  const handleLeadMagnetFilterChange = (event) => {
-    setLeadMagnetFilter(event.target.value);
-  };
-
-  const handleTemplateFilterChange = (event) => {
-    setTemplateFilter(event.target.value);
-  };
-
   return (
-    <div>
-      <h1>Lead Magnet Builder Dashboard</h1>
-      <div>
-        <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
-        <button onClick={handleCreateTemplate}>Create Template</button>
+    <div className="dashboard-container">
+      <div className="header-section">
+        <h1>Lead Magnet Builder Dashboard</h1>
+        <button onClick={handleCreateLeadMagnet}>Create New Lead Magnet</button>
       </div>
-      <div>
-        <input type="text" value={searchTerm} onChange={handleSearch} placeholder="Search" />
+      <div className="main-section">
+        <div className="lead-magnets-section">
+          <h2>Lead Magnets</h2>
+          <div className="lead-magnets-grid">
+            {filteredLeadMagnets.map((leadMagnet, index) => (
+              <LeadMagnetCard key={index} leadMagnet={leadMagnet} />
+            ))}
+          </div>
+        </div>
+        <div className="templates-section">
+          <h2>Templates</h2>
+          <div className="templates-grid">
+            {filteredTemplates.map((template, index) => (
+              <TemplateCard key={index} template={template} />
+            ))}
+          </div>
+        </div>
       </div>
-      <div>
-        <select value={leadMagnetFilter} onChange={handleLeadMagnetFilterChange}>
-          <option value="all">All Lead Magnets</option>
-          <option value="new">New Lead Magnets</option>
-          <option value="popular">Popular Lead Magnets</option>
-        </select>
-        <select value={templateFilter} onChange={handleTemplateFilterChange}>
-          <option value="all">All Templates</option>
-          <option value="new">New Templates</option>
-          <option value="popular">Popular Templates</option>
-        </select>
-      </div>
-      <div>
-        {filteredLeadMagnets.map((leadMagnet) => (
-          <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
-        ))}
-      </div>
-      <div>
-        {filteredTemplates.map((template) => (
-          <TemplateCard key={template.id} template={template} />
-        ))}
-      </div>
-      <div>
-        <AnalyticsCard analytics={analytics} />
-        <SettingsCard settings={settings} />
-        <PricingCard pricing={pricing} />
+      <div className="sidebar-section">
+        <div className="analytics-section">
+          <h2>Analytics</h2>
+          <AnalyticsCard analytics={analytics} />
+        </div>
+        <div className="settings-section">
+          <h2>Settings</h2>
+          <SettingsCard settings={settings} />
+        </div>
+        <div className="pricing-section">
+          <h2>Pricing</h2>
+          <PricingCard pricing={pricing} />
+        </div>
       </div>
     </div>
   );
