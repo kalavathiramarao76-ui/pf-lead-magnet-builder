@@ -25,6 +25,8 @@ const DashboardPage = () => {
   const [sortBy, setSortBy] = useState('name');
   const [leadMagnetFilter, setLeadMagnetFilter] = useState('all');
   const [templateFilter, setTemplateFilter] = useState('all');
+  const [filteredLeadMagnets, setFilteredLeadMagnets] = useState([]);
+  const [filteredTemplates, setFilteredTemplates] = useState([]);
 
   const { getItem, setItem } = useLocalStorage();
 
@@ -56,6 +58,30 @@ const DashboardPage = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const filterLeadMagnets = () => {
+      if (leadMagnetFilter === 'all') {
+        setFilteredLeadMagnets(leadMagnets);
+      } else {
+        setFilteredLeadMagnets(leadMagnets.filter((leadMagnet) => leadMagnet.name.includes(leadMagnetFilter)));
+      }
+    };
+
+    filterLeadMagnets();
+  }, [leadMagnetFilter, leadMagnets]);
+
+  useEffect(() => {
+    const filterTemplates = () => {
+      if (templateFilter === 'all') {
+        setFilteredTemplates(templates);
+      } else {
+        setFilteredTemplates(templates.filter((template) => template.name.includes(templateFilter)));
+      }
+    };
+
+    filterTemplates();
+  }, [templateFilter, templates]);
+
   const handleCreateLeadMagnet = () => {
     const newLeadMagnet = {
       id: Date.now(),
@@ -83,86 +109,58 @@ const DashboardPage = () => {
     setSearchTerm(searchTerm);
     setIsSearching(true);
     const timeoutId = setTimeout(() => {
-      const results = [...leadMagnets, ...templates].filter((item) => {
-        const itemName = item.name.toLowerCase();
-        const itemDescription = item.description.toLowerCase();
-        return itemName.includes(searchTerm.toLowerCase()) || itemDescription.includes(searchTerm.toLowerCase());
-      });
+      const results = [...leadMagnets, ...templates].filter((item) => item.name.includes(searchTerm));
       setSearchResults(results);
+      setIsSearching(false);
     }, 500);
     return () => clearTimeout(timeoutId);
   };
 
-  const handleFilterLeadMagnet = (filter) => {
-    setLeadMagnetFilter(filter);
+  const handleLeadMagnetFilterChange = (event) => {
+    setLeadMagnetFilter(event.target.value);
   };
 
-  const handleFilterTemplate = (filter) => {
-    setTemplateFilter(filter);
+  const handleTemplateFilterChange = (event) => {
+    setTemplateFilter(event.target.value);
   };
-
-  const filteredLeadMagnets = leadMagnets.filter((leadMagnet) => {
-    if (leadMagnetFilter === 'all') {
-      return true;
-    } else if (leadMagnetFilter === 'active') {
-      return leadMagnet.status === 'active';
-    } else if (leadMagnetFilter === 'inactive') {
-      return leadMagnet.status === 'inactive';
-    }
-  });
-
-  const filteredTemplates = templates.filter((template) => {
-    if (templateFilter === 'all') {
-      return true;
-    } else if (templateFilter === 'active') {
-      return template.status === 'active';
-    } else if (templateFilter === 'inactive') {
-      return template.status === 'inactive';
-    }
-  });
 
   return (
     <div>
-      <input
-        type="search"
-        value={searchTerm}
-        onChange={handleSearch}
-        placeholder="Search lead magnets and templates"
-      />
-      <select value={leadMagnetFilter} onChange={(e) => handleFilterLeadMagnet(e.target.value)}>
-        <option value="all">All Lead Magnets</option>
-        <option value="active">Active Lead Magnets</option>
-        <option value="inactive">Inactive Lead Magnets</option>
-      </select>
-      <select value={templateFilter} onChange={(e) => handleFilterTemplate(e.target.value)}>
-        <option value="all">All Templates</option>
-        <option value="active">Active Templates</option>
-        <option value="inactive">Inactive Templates</option>
-      </select>
-      {isSearching ? (
-        <div>
-          {searchResults.map((result) => (
-            <div key={result.id}>
-              <h2>{result.name}</h2>
-              <p>{result.description}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div>
-          {filteredLeadMagnets.map((leadMagnet) => (
-            <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
-          ))}
-          {filteredTemplates.map((template) => (
-            <TemplateCard key={template.id} template={template} />
-          ))}
-        </div>
-      )}
-      <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
-      <button onClick={handleCreateTemplate}>Create Template</button>
-      <AnalyticsCard analytics={analytics} />
-      <SettingsCard settings={settings} />
-      <PricingCard pricing={pricing} />
+      <h1>Lead Magnet Builder Dashboard</h1>
+      <div>
+        <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
+        <button onClick={handleCreateTemplate}>Create Template</button>
+      </div>
+      <div>
+        <input type="text" value={searchTerm} onChange={handleSearch} placeholder="Search" />
+      </div>
+      <div>
+        <select value={leadMagnetFilter} onChange={handleLeadMagnetFilterChange}>
+          <option value="all">All Lead Magnets</option>
+          <option value="new">New Lead Magnets</option>
+          <option value="popular">Popular Lead Magnets</option>
+        </select>
+        <select value={templateFilter} onChange={handleTemplateFilterChange}>
+          <option value="all">All Templates</option>
+          <option value="new">New Templates</option>
+          <option value="popular">Popular Templates</option>
+        </select>
+      </div>
+      <div>
+        {filteredLeadMagnets.map((leadMagnet) => (
+          <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+        ))}
+      </div>
+      <div>
+        {filteredTemplates.map((template) => (
+          <TemplateCard key={template.id} template={template} />
+        ))}
+      </div>
+      <div>
+        <AnalyticsCard analytics={analytics} />
+        <SettingsCard settings={settings} />
+        <PricingCard pricing={pricing} />
+      </div>
     </div>
   );
 };

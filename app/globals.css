@@ -24,31 +24,31 @@
   }
 
   h1 {
-    @apply text-4xl;
+    @apply text-4xl md:text-5xl;
   }
 
   h2 {
-    @apply text-3xl;
+    @apply text-3xl md:text-4xl;
   }
 
   h3 {
-    @apply text-2xl;
+    @apply text-2xl md:text-3xl;
   }
 
   h4 {
-    @apply text-xl;
+    @apply text-xl md:text-2xl;
   }
 
   h5 {
-    @apply text-lg;
+    @apply text-lg md:text-xl;
   }
 
   h6 {
-    @apply text-base;
+    @apply text-base md:text-lg;
   }
 
   p {
-    @apply text-base;
+    @apply text-base md:text-lg;
     color: #666;
   }
 
@@ -92,7 +92,7 @@
 
 @layer components {
   .container {
-    @apply max-w-7xl mx-auto px-4;
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
   .grid {
@@ -117,5 +117,25 @@
 
   .text-center {
     @apply text-center;
+  }
+}
+
+@layer utilities {
+  @media (max-width: 640px) {
+    :root {
+      font-size: 14px;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 1280px) {
+    :root {
+      font-size: 16px;
+    }
+  }
+
+  @media (min-width: 1281px) {
+    :root {
+      font-size: 18px;
+    }
   }
 }
