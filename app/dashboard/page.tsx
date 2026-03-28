@@ -21,6 +21,8 @@ const DashboardPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [sortBy, setSortBy] = useState('name');
 
   const { getItem, setItem } = useLocalStorage();
 
@@ -87,8 +89,27 @@ const DashboardPage = () => {
           itemDescription.includes(searchTerm.toLowerCase())
         );
       });
-      setSearchResults(results);
-      setIsSearching(false);
+
+      const filteredResults = results.filter((item) => {
+        if (filterType === 'all') return true;
+        if (filterType === 'leadMagnet' && item.id >= 0) return true;
+        if (filterType === 'template' && item.id >= 0) return true;
+        return false;
+      });
+
+      const sortedResults = filteredResults.sort((a, b) => {
+        if (sortBy === 'name') {
+          if (sortOrder === 'asc') return a.name.localeCompare(b.name);
+          return b.name.localeCompare(a.name);
+        }
+        if (sortBy === 'description') {
+          if (sortOrder === 'asc') return a.description.localeCompare(b.description);
+          return b.description.localeCompare(a.description);
+        }
+        return 0;
+      });
+
+      setSearchResults(sortedResults);
     }, 500);
     return () => clearTimeout(timeoutId);
   };
@@ -101,22 +122,12 @@ const DashboardPage = () => {
     setFilterStatus(event.target.value);
   };
 
-  const filteredResults = () => {
-    if (filterType === 'all' && filterStatus === 'all') {
-      return searchResults;
-    }
+  const handleSortOrderChange = (event) => {
+    setSortOrder(event.target.value);
+  };
 
-    return searchResults.filter((item) => {
-      if (filterType !== 'all' && item.type !== filterType) {
-        return false;
-      }
-
-      if (filterStatus !== 'all' && item.status !== filterStatus) {
-        return false;
-      }
-
-      return true;
-    });
+  const handleSortByChange = (event) => {
+    setSortBy(event.target.value);
   };
 
   return (
@@ -128,35 +139,47 @@ const DashboardPage = () => {
         placeholder="Search lead magnets and templates"
       />
       <select value={filterType} onChange={handleFilterTypeChange}>
-        <option value="all">All types</option>
+        <option value="all">All</option>
         <option value="leadMagnet">Lead Magnets</option>
         <option value="template">Templates</option>
       </select>
       <select value={filterStatus} onChange={handleFilterStatusChange}>
-        <option value="all">All statuses</option>
+        <option value="all">All</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
+      <select value={sortOrder} onChange={handleSortOrderChange}>
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+      <select value={sortBy} onChange={handleSortByChange}>
+        <option value="name">Name</option>
+        <option value="description">Description</option>
+      </select>
       {isSearching ? (
-        <p>Searching...</p>
-      ) : (
         <div>
-          {filteredResults().map((item) => (
+          {searchResults.map((item) => (
             <div key={item.id}>
-              {item.type === 'leadMagnet' ? (
-                <LeadMagnetCard leadMagnet={item} />
-              ) : (
-                <TemplateCard template={item} />
-              )}
+              <LeadMagnetCard leadMagnet={item} />
+              <TemplateCard template={item} />
             </div>
           ))}
+        </div>
+      ) : (
+        <div>
+          {leadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+          ))}
+          {templates.map((template) => (
+            <TemplateCard key={template.id} template={template} />
+          ))}
+          <AnalyticsCard analytics={analytics} />
+          <SettingsCard settings={settings} />
+          <PricingCard pricing={pricing} />
         </div>
       )}
       <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
       <button onClick={handleCreateTemplate}>Create Template</button>
-      <AnalyticsCard analytics={analytics} />
-      <SettingsCard settings={settings} />
-      <PricingCard pricing={pricing} />
     </div>
   );
 };

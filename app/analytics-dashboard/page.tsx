@@ -71,36 +71,56 @@ const AnalyticsDashboardPage = () => {
     });
   };
 
-  const handlePredefinedDateRangeChange = (range: string) => {
-    setPredefinedDateRange(range);
-    setIsLoadingAnalytics(true);
-    const startDate = range === 'today' ? new Date() : range === 'yesterday' ? new Date(new Date().getTime() - 86400000) : null;
-    const endDate = range === 'today' ? new Date() : range === 'yesterday' ? new Date(new Date().getTime() - 86400000) : null;
-    Promise.all(
-      selectedLeadMagnets.map((leadMagnet) =>
-        getLeadMagnetAnalytics(leadMagnet.id, startDate, endDate).then((data) => ({ [leadMagnet.id]: data }))
-      )
-    ).then((results) => {
-      const newAnalytics = results.reduce((acc, result) => ({ ...acc, ...result }), {});
-      setAnalytics(newAnalytics);
-      setIsLoadingAnalytics(false);
-    });
+  const handleExportToCSV = () => {
+    const csvData = Object.keys(analytics).map((leadMagnetId) => {
+      const leadMagnetAnalytics = analytics[leadMagnetId];
+      return Object.keys(leadMagnetAnalytics).map((metric) => {
+        return `${leadMagnetId},${metric},${leadMagnetAnalytics[metric]}`;
+      });
+    }).flat();
+    const csvString = ['Lead Magnet ID,Metric,Value', ...csvData].join('\n');
+    const csvBlob = new Blob([csvString], { type: 'text/csv' });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const csvLink = document.createElement('a');
+    csvLink.href = csvUrl;
+    csvLink.download = 'analytics_data.csv';
+    csvLink.click();
   };
 
-  if (isLoadingLeadMagnets) {
-    return (
-      <PageLayout>
-        <Loader />
-      </PageLayout>
-    );
-  }
+  const handleExportToExcel = () => {
+    const excelData = Object.keys(analytics).map((leadMagnetId) => {
+      const leadMagnetAnalytics = analytics[leadMagnetId];
+      return Object.keys(leadMagnetAnalytics).map((metric) => {
+        return { LeadMagnetID: leadMagnetId, Metric: metric, Value: leadMagnetAnalytics[metric] };
+      });
+    }).flat();
+    const excelBlob = new Blob([JSON.stringify(excelData)], { type: 'application/json' });
+    const excelUrl = URL.createObjectURL(excelBlob);
+    const excelLink = document.createElement('a');
+    excelLink.href = excelUrl;
+    excelLink.download = 'analytics_data.json';
+    excelLink.click();
+  };
 
   return (
     <PageLayout>
-      {isLoadingAnalytics ? (
-        <Loader />
-      ) : (
+      <div>
+        <h1>Lead Magnet Builder Analytics Dashboard</h1>
         <div>
+          <DatePicker
+            selectsRange={true}
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            onChange={(update) => {
+              handleDateRangeChange(update[0], update[1]);
+            }}
+          />
+          <button onClick={handleExportToCSV}>Export to CSV</button>
+          <button onClick={handleExportToExcel}>Export to Excel</button>
+        </div>
+        {isLoadingLeadMagnets ? (
+          <Loader />
+        ) : (
           <div>
             {leadMagnets.map((leadMagnet) => (
               <LeadMagnetCard
@@ -111,27 +131,17 @@ const AnalyticsDashboardPage = () => {
               />
             ))}
           </div>
-          <div>
-            <DatePicker
-              selectsRange={true}
-              startDate={dateRange.startDate}
-              endDate={dateRange.endDate}
-              onChange={(update) => {
-                handleDateRangeChange(update[0], update[1]);
-              }}
-            />
-          </div>
-          <div>
-            <button onClick={() => handlePredefinedDateRangeChange('today')}>Today</button>
-            <button onClick={() => handlePredefinedDateRangeChange('yesterday')}>Yesterday</button>
-          </div>
+        )}
+        {isLoadingAnalytics ? (
+          <Loader />
+        ) : (
           <div>
             {selectedLeadMagnets.map((leadMagnet) => (
               <AnalyticsChart key={leadMagnet.id} analytics={analytics[leadMagnet.id]} />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </PageLayout>
   );
 };
