@@ -59,7 +59,10 @@ const AnalyticsDashboardPage = () => {
         <div className="flex flex-col">
           <h2 className="text-2xl font-bold mb-2">Lead Magnets</h2>
           {isLoadingLeadMagnets ? (
-            <div>Loading lead magnets...</div>
+            <div className="flex justify-center items-center">
+              <div className="border-4 border-gray-200 border-t-gray-600 rounded-full w-12 h-12 animate-spin"></div>
+              <span className="ml-4">Loading lead magnets...</span>
+            </div>
           ) : (
             <ul>
               {leadMagnets.map((leadMagnet) => (
@@ -76,29 +79,8 @@ const AnalyticsDashboardPage = () => {
         </div>
         <div className="flex flex-col">
           {selectedLeadMagnet && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date-range">
-                Date Range:
-              </label>
-              <input
-                type="date"
-                id="start-date"
-                value={dateRange.startDate ? dateRange.startDate.toISOString().slice(0, 10) : ''}
-                onChange={(e) => handleDateRangeChange(new Date(e.target.value), dateRange.endDate)}
-                className="mr-2"
-              />
-              <input
-                type="date"
-                id="end-date"
-                value={dateRange.endDate ? dateRange.endDate.toISOString().slice(0, 10) : ''}
-                onChange={(e) => handleDateRangeChange(dateRange.startDate, new Date(e.target.value))}
-                className="ml-2"
-              />
-              {isLoadingAnalytics ? (
-                <div>Loading analytics...</div>
-              ) : (
-                <AnalyticsChart analytics={analytics} />
-              )}
+            <div>
+              <AnalyticsChart analytics={analytics} />
             </div>
           )}
         </div>

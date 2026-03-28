@@ -228,12 +228,15 @@ use client;
   .text-gray-900 {
     @apply text-gray-900;
   }
-
-  .dark-mode {
-    @apply bg-gray-900 text-gray-100;
-  }
 }
 
 @layer utilities {
-  .
+  link[type="font/woff2"] {
+    @apply font-display swap;
+  }
 }
+
+link(rel="preload" href="/fonts/Inter-Regular.ttf" as="font" type="font/truetype" crossorigin="anonymous");
+link(rel="preload" href="/fonts/Inter-Medium.ttf" as="font" type="font/truetype" crossorigin="anonymous");
+link(rel="preload" href="/fonts/Inter-SemiBold.ttf" as="font" type="font/truetype" crossorigin="anonymous");
+link(rel="preload" href="/fonts/Inter-Bold.ttf" as="font" type="font/truetype" crossorigin="anonymous");
