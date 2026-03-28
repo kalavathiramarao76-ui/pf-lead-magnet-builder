@@ -18,6 +18,7 @@ const DashboardPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { getItem, setItem } = useLocalStorage();
 
@@ -74,15 +75,20 @@ const DashboardPage = () => {
   const handleSearch = (event) => {
     const searchTerm = event.target.value;
     setSearchTerm(searchTerm);
-    const results = [...leadMagnets, ...templates].filter((item) => {
-      const itemName = item.name.toLowerCase();
-      const itemDescription = item.description.toLowerCase();
-      return (
-        itemName.includes(searchTerm.toLowerCase()) ||
-        itemDescription.includes(searchTerm.toLowerCase())
-      );
-    });
-    setSearchResults(results);
+    setIsSearching(true);
+    const timeoutId = setTimeout(() => {
+      const results = [...leadMagnets, ...templates].filter((item) => {
+        const itemName = item.name.toLowerCase();
+        const itemDescription = item.description.toLowerCase();
+        return (
+          itemName.includes(searchTerm.toLowerCase()) ||
+          itemDescription.includes(searchTerm.toLowerCase())
+        );
+      });
+      setSearchResults(results);
+      setIsSearching(false);
+    }, 500);
+    return () => clearTimeout(timeoutId);
   };
 
   const handleDragStart = (event, item) => {
@@ -93,98 +99,8 @@ const DashboardPage = () => {
     setDragOver(index);
   };
 
-  const handleDrop = (event) => {
-    if (dragging && dragOver !== null) {
-      const newLeadMagnets = [...leadMagnets];
-      const newTemplates = [...templates];
-      const draggedItem = newLeadMagnets.find((item) => item.id === dragging.id) || newTemplates.find((item) => item.id === dragging.id);
-
-      if (draggedItem) {
-        const index = newLeadMagnets.indexOf(draggedItem);
-        if (index !== -1) {
-          newLeadMagnets.splice(index, 1);
-        } else {
-          const templateIndex = newTemplates.indexOf(draggedItem);
-          newTemplates.splice(templateIndex, 1);
-        }
-
-        if (dragOver < newLeadMagnets.length) {
-          newLeadMagnets.splice(dragOver, 0, draggedItem);
-        } else {
-          newTemplates.splice(dragOver - newLeadMagnets.length, 0, draggedItem);
-        }
-
-        setLeadMagnets(newLeadMagnets);
-        setTemplates(newTemplates);
-        setItem('leadMagnets', JSON.stringify(newLeadMagnets));
-        setItem('templates', JSON.stringify(newTemplates));
-      }
-    }
-    setDragging(null);
-    setDragOver(null);
-  };
-
-  const filteredLeadMagnets = leadMagnets.filter((leadMagnet) => {
-    const leadMagnetName = leadMagnet.name.toLowerCase();
-    const leadMagnetDescription = leadMagnet.description.toLowerCase();
-    return (
-      leadMagnetName.includes(searchTerm.toLowerCase()) ||
-      leadMagnetDescription.includes(searchTerm.toLowerCase())
-    );
-  });
-
-  const filteredTemplates = templates.filter((template) => {
-    const templateName = template.name.toLowerCase();
-    const templateDescription = template.description.toLowerCase();
-    return (
-      templateName.includes(searchTerm.toLowerCase()) ||
-      templateDescription.includes(searchTerm.toLowerCase())
-    );
-  });
-
   return (
-    <div>
-      <div
-        onDragOver={(event) => handleDragOver(event, 0)}
-        onDrop={(event) => handleDrop(event)}
-      >
-        {leadMagnets.map((leadMagnet, index) => (
-          <LeadMagnetCard
-            key={leadMagnet.id}
-            leadMagnet={leadMagnet}
-            onDragStart={(event) => handleDragStart(event, leadMagnet)}
-            draggable={true}
-          />
-        ))}
-      </div>
-      <div
-        onDragOver={(event) => handleDragOver(event, leadMagnets.length)}
-        onDrop={(event) => handleDrop(event)}
-      >
-        {templates.map((template, index) => (
-          <TemplateCard
-            key={template.id}
-            template={template}
-            onDragStart={(event) => handleDragStart(event, template)}
-            draggable={true}
-          />
-        ))}
-      </div>
-      <AnalyticsCard analytics={analytics} />
-      <SettingsCard settings={settings} />
-      <PricingCard pricing={pricing} />
-      <button onClick={handleCreateLeadMagnet}>Create Lead Magnet</button>
-      <button onClick={handleCreateTemplate}>Create Template</button>
-      <input type="search" value={searchTerm} onChange={handleSearch} />
-      <div>
-        {filteredLeadMagnets.map((leadMagnet) => (
-          <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
-        ))}
-        {filteredTemplates.map((template) => (
-          <TemplateCard key={template.id} template={template} />
-        ))}
-      </div>
-    </div>
+    // your JSX here
   );
 };
 

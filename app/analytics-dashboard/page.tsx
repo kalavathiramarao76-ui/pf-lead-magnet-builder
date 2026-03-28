@@ -73,7 +73,6 @@ const AnalyticsDashboardPage = () => {
         setDateRange({ startDate: yesterday, endDate: yesterday });
         break;
       default:
-        setDateRange({ startDate: null, endDate: null });
         break;
     }
     if (selectedLeadMagnet) {
@@ -85,72 +84,51 @@ const AnalyticsDashboardPage = () => {
     }
   };
 
+  const downloadAnalyticsAsCsv = () => {
+    if (!analytics) return;
+    const csvContent = 'Date,Views,Clicks,Conversions\n' + analytics.data.map((item) => `${item.date},${item.views},${item.clicks},${item.conversions}`).join('\n');
+    const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'analytics.csv');
+    link.click();
+  };
+
   return (
     <PageLayout>
-      <h1 className="text-3xl font-bold mb-4">Analytics Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <h2 className="text-2xl font-bold mb-2">Lead Magnets</h2>
-          {isLoadingLeadMagnets ? (
-            <div className="flex justify-center items-center">
-              <div className="border-4 border-gray-200 border-t-gray-600 rounded-full w-12 h-12 animate-spin"></div>
-              <span className="ml-4">Loading lead magnets...</span>
-            </div>
-          ) : (
-            <ul>
-              {leadMagnets.map((leadMagnet) => (
-                <li key={leadMagnet.id}>
-                  <LeadMagnetCard
-                    leadMagnet={leadMagnet}
-                    isSelected={selectedLeadMagnet === leadMagnet}
-                    onSelect={() => handleLeadMagnetSelect(leadMagnet)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="flex flex-col md:flex-row">
+        <div className="w-full md:w-1/3">
+          {leadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} onSelect={handleLeadMagnetSelect} />
+          ))}
         </div>
-        <div className="flex flex-col">
-          <h2 className="text-2xl font-bold mb-2">Date Range</h2>
-          <div className="flex flex-col mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Predefined Ranges:</label>
-            <select
-              className="block w-full p-2 pl-10 text-sm text-gray-700 border border-gray-200 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              value={predefinedDateRange}
-              onChange={(e) => handlePredefinedDateRangeChange(e.target.value)}
-            >
-              <option value="">Select a range</option>
-              <option value="last7Days">Last 7 days</option>
-              <option value="last30Days">Last 30 days</option>
-              <option value="yesterday">Yesterday</option>
-            </select>
-          </div>
-          <div className="flex flex-col mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">Custom Range:</label>
-            <div className="flex justify-between">
-              <DatePicker
-                selected={dateRange.startDate}
-                onChange={(date) => handleDateRangeChange(date, dateRange.endDate)}
-                placeholderText="Start date"
-                className="block w-full p-2 pl-10 text-sm text-gray-700 border border-gray-200 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-              <span className="mx-2">to</span>
-              <DatePicker
-                selected={dateRange.endDate}
-                onChange={(date) => handleDateRangeChange(dateRange.startDate, date)}
-                placeholderText="End date"
-                className="block w-full p-2 pl-10 text-sm text-gray-700 border border-gray-200 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-          </div>
+        <div className="w-full md:w-2/3">
           {selectedLeadMagnet && (
             <div>
-              <h2 className="text-2xl font-bold mb-2">Analytics</h2>
+              <div className="flex justify-between mb-4">
+                <DatePicker
+                  selectsRange={true}
+                  startDate={dateRange.startDate}
+                  endDate={dateRange.endDate}
+                  onChange={handleDateRangeChange}
+                  className="w-full"
+                />
+                <select
+                  value={predefinedDateRange}
+                  onChange={(e) => handlePredefinedDateRangeChange(e.target.value)}
+                  className="w-full md:w-1/3"
+                >
+                  <option value="">Select Date Range</option>
+                  <option value="last7Days">Last 7 Days</option>
+                  <option value="last30Days">Last 30 Days</option>
+                  <option value="yesterday">Yesterday</option>
+                </select>
+                <button onClick={downloadAnalyticsAsCsv} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                  Download as CSV
+                </button>
+              </div>
               {isLoadingAnalytics ? (
-                <div className="flex justify-center items-center">
-                  <div className="border-4 border-gray-200 border-t-gray-600 rounded-full w-12 h-12 animate-spin"></div>
-                  <span className="ml-4">Loading analytics...</span>
-                </div>
+                <div>Loading...</div>
               ) : (
                 <AnalyticsChart analytics={analytics} />
               )}
