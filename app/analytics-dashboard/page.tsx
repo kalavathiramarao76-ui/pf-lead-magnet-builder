@@ -35,11 +35,13 @@ const AnalyticsDashboardPage = () => {
       setLeadMagnets(JSON.parse(storedLeadMagnets));
       setIsLoadingLeadMagnets(false);
     } else {
-      getLeadMagnets().then((data) => {
+      const fetchLeadMagnets = async () => {
+        const data = await getLeadMagnets();
         setLeadMagnets(data);
         localStorage.setItem('leadMagnets', JSON.stringify(data));
         setIsLoadingLeadMagnets(false);
-      });
+      };
+      fetchLeadMagnets();
     }
   }, []);
 
@@ -52,11 +54,13 @@ const AnalyticsDashboardPage = () => {
     if (isSelected) {
       setIsLoadingAnalytics(true);
       setIsChartLoading(true);
-      getBatchLeadMagnetAnalytics([leadMagnet.id], dateRange?.from, dateRange?.to).then((data) => {
+      const fetchAnalytics = async () => {
+        const data = await getBatchLeadMagnetAnalytics([leadMagnet.id], dateRange?.from, dateRange?.to);
         setAnalytics((prevAnalytics) => ({ ...prevAnalytics, ...data }));
         setIsLoadingAnalytics(false);
         setIsChartLoading(false);
-      });
+      };
+      fetchAnalytics();
     } else {
       setAnalytics((prevAnalytics) => {
         const { [leadMagnet.id]: removed, ...rest } = prevAnalytics;
@@ -71,21 +75,13 @@ const AnalyticsDashboardPage = () => {
     setIsLoadingAnalytics(true);
     setIsChartLoading(true);
     const selectedLeadMagnetIds = selectedLeadMagnets.map((leadMagnet) => leadMagnet.id);
-    getBatchLeadMagnetAnalytics(selectedLeadMagnetIds, range?.from, range?.to).then((data) => {
-      setAnalytics((prevAnalytics) => {
-        const newAnalytics = { ...prevAnalytics };
-        selectedLeadMagnetIds.forEach((id) => {
-          if (data[id]) {
-            newAnalytics[id] = data[id];
-          } else {
-            delete newAnalytics[id];
-          }
-        });
-        return newAnalytics;
-      });
+    const fetchBatchAnalytics = async () => {
+      const data = await getBatchLeadMagnetAnalytics(selectedLeadMagnetIds, range?.from, range?.to);
+      setAnalytics((prevAnalytics) => ({ ...prevAnalytics, ...data }));
       setIsLoadingAnalytics(false);
       setIsChartLoading(false);
-    });
+    };
+    fetchBatchAnalytics();
   };
 
   return (
@@ -108,7 +104,7 @@ const AnalyticsDashboardPage = () => {
             placeholder="Select date range"
             label="Date range"
           />
-          {isLoadingAnalytics || isChartLoading ? (
+          {isChartLoading ? (
             <Loader />
           ) : (
             <AnalyticsChart
