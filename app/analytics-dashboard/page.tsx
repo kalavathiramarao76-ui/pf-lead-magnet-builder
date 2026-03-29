@@ -74,47 +74,65 @@ const AnalyticsDashboardPage = () => {
     setPredefinedDateRange(null);
     setIsLoadingAnalytics(true);
     setIsChartLoading(true);
-    const selectedLeadMagnetIds = selectedLeadMagnets.map((leadMagnet) => leadMagnet.id);
-    const fetchBatchAnalytics = async () => {
-      const data = await getBatchLeadMagnetAnalytics(selectedLeadMagnetIds, range?.from, range?.to);
-      setAnalytics((prevAnalytics) => ({ ...prevAnalytics, ...data }));
+    const fetchAnalytics = async () => {
+      const data = await getBatchLeadMagnetAnalytics(selectedLeadMagnets.map((lm) => lm.id), range?.from, range?.to);
+      setAnalytics(data);
       setIsLoadingAnalytics(false);
       setIsChartLoading(false);
     };
-    fetchBatchAnalytics();
+    fetchAnalytics();
+  };
+
+  const handleDownloadAnalytics = () => {
+    const csvData = [];
+    const headers = ['Lead Magnet ID', 'Date', 'Views', 'Clicks', 'Conversions'];
+    csvData.push(headers);
+    Object.keys(analytics).forEach((leadMagnetId) => {
+      const leadMagnetAnalytics = analytics[leadMagnetId];
+      Object.keys(leadMagnetAnalytics).forEach((date) => {
+        const analyticsData = leadMagnetAnalytics[date];
+        csvData.push([leadMagnetId, date, analyticsData.views, analyticsData.clicks, analyticsData.conversions]);
+      });
+    });
+    const csvString = csvData.map((row) => row.join(',')).join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'analytics_data.csv';
+    a.click();
   };
 
   return (
     <PageLayout>
-      {isLoadingLeadMagnets ? (
-        <Loader />
-      ) : (
-        <div>
-          {leadMagnets.map((leadMagnet) => (
-            <LeadMagnetCard
-              key={leadMagnet.id}
-              leadMagnet={leadMagnet}
-              isSelected={selectedLeadMagnets.includes(leadMagnet)}
-              onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+      <div>
+        <h1>Lead Magnet Builder Analytics Dashboard</h1>
+        {isLoadingLeadMagnets ? (
+          <Loader />
+        ) : (
+          <div>
+            <DateRangePicker
+              value={dateRange}
+              onChange={handleDateRangeChange}
+              placeholder="Select date range"
+              label="Date Range"
             />
-          ))}
-          <DateRangePicker
-            value={dateRange}
-            onChange={handleDateRangeChange}
-            placeholder="Select date range"
-            label="Date range"
-          />
-          {isChartLoading ? (
-            <Loader />
-          ) : (
-            <AnalyticsChart
-              analytics={analytics}
-              chartType={chartType}
-              chartOptions={chartOptions}
-            />
-          )}
-        </div>
-      )}
+            <button onClick={handleDownloadAnalytics}>Download Analytics Data</button>
+            {selectedLeadMagnets.map((leadMagnet) => (
+              <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+            ))}
+            {isLoadingAnalytics || isChartLoading ? (
+              <Loader />
+            ) : (
+              <AnalyticsChart
+                analytics={analytics}
+                chartType={chartType}
+                chartOptions={chartOptions}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </PageLayout>
   );
 };
