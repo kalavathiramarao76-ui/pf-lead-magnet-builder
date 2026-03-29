@@ -75,63 +75,77 @@ const AnalyticsDashboardPage = () => {
     setIsLoadingAnalytics(true);
     setIsChartLoading(true);
     const fetchAnalytics = async () => {
-      const data = await getBatchLeadMagnetAnalytics(selectedLeadMagnets.map((lm) => lm.id), range?.from, range?.to);
-      setAnalytics(data);
+      if (selectedLeadMagnets.length > 0) {
+        const data = await getBatchLeadMagnetAnalytics(selectedLeadMagnets.map((lm) => lm.id), range?.from, range?.to);
+        setAnalytics((prevAnalytics) => ({ ...prevAnalytics, ...data }));
+      }
       setIsLoadingAnalytics(false);
       setIsChartLoading(false);
     };
     fetchAnalytics();
   };
 
-  const handleDownloadAnalytics = () => {
-    const csvData = [];
-    const headers = ['Lead Magnet ID', 'Date', 'Views', 'Clicks', 'Conversions'];
-    csvData.push(headers);
-    Object.keys(analytics).forEach((leadMagnetId) => {
-      const leadMagnetAnalytics = analytics[leadMagnetId];
-      Object.keys(leadMagnetAnalytics).forEach((date) => {
-        const analyticsData = leadMagnetAnalytics[date];
-        csvData.push([leadMagnetId, date, analyticsData.views, analyticsData.clicks, analyticsData.conversions]);
-      });
-    });
-    const csvString = csvData.map((row) => row.join(',')).join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'analytics_data.csv';
-    a.click();
+  const dateRangePickerSettings: DateRangePickerSettings = {
+    allowSingleDateInRange: true,
+    bounds: [
+      { min: new Date('2020-01-01'), max: new Date('2025-12-31') },
+    ],
+    minDate: new Date('2020-01-01'),
+    maxDate: new Date('2025-12-31'),
+    getInitialDate: () => new Date(),
+    amountOfMonths: 2,
+    step: 1,
+    allowDeselect: true,
+    clearable: true,
+    placeholder: 'Select date range',
+    labelFormat: 'MMM dd, yyyy',
+    dropdownType: 'modal',
+    withinPortal: true,
+    size: 'md',
+    inputFormat: 'MMM dd, yyyy',
+    firstDayOfWeek: 0,
+    locale: 'en',
+    getDayText: (date) => date.toLocaleDateString('en', { weekday: 'long' }),
+    getMonthText: (date) => date.toLocaleString('en', { month: 'long' }),
+    getYearText: (date) => date.toLocaleString('en', { year: 'numeric' }),
   };
 
   return (
     <PageLayout>
-      <div>
-        <h1>Lead Magnet Builder Analytics Dashboard</h1>
-        {isLoadingLeadMagnets ? (
-          <Loader />
-        ) : (
-          <div>
-            <DateRangePicker
-              value={dateRange}
-              onChange={handleDateRangeChange}
-              placeholder="Select date range"
-              label="Date Range"
-            />
-            <button onClick={handleDownloadAnalytics}>Download Analytics Data</button>
-            {selectedLeadMagnets.map((leadMagnet) => (
-              <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
-            ))}
-            {isLoadingAnalytics || isChartLoading ? (
-              <Loader />
-            ) : (
-              <AnalyticsChart
-                analytics={analytics}
-                chartType={chartType}
-                chartOptions={chartOptions}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-1/2">
+          <h2 className="text-lg font-bold mb-4">Lead Magnets</h2>
+          {isLoadingLeadMagnets ? (
+            <Loader />
+          ) : (
+            leadMagnets.map((leadMagnet) => (
+              <LeadMagnetCard
+                key={leadMagnet.id}
+                leadMagnet={leadMagnet}
+                isSelected={selectedLeadMagnets.includes(leadMagnet)}
+                onToggleSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
               />
-            )}
-          </div>
-        )}
+            ))
+          )}
+        </div>
+        <div className="w-full md:w-1/2">
+          <h2 className="text-lg font-bold mb-4">Date Range Picker</h2>
+          <DateRangePicker
+            settings={dateRangePickerSettings}
+            value={dateRange}
+            onChange={handleDateRangeChange}
+            placeholder="Select date range"
+          />
+          {isLoadingAnalytics || isChartLoading ? (
+            <Loader />
+          ) : (
+            <AnalyticsChart
+              analytics={analytics}
+              chartType={chartType}
+              chartOptions={chartOptions}
+            />
+          )}
+        </div>
       </div>
     </PageLayout>
   );

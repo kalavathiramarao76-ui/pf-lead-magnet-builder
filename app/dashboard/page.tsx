@@ -25,9 +25,11 @@ class TrieNode {
 
 class Trie {
   root: TrieNode;
+  private cache: { [key: string]: any[] };
 
   constructor() {
     this.root = new TrieNode();
+    this.cache = {};
   }
 
   insertLeadMagnet(leadMagnet: any) {
@@ -40,6 +42,7 @@ class Trie {
     }
     node.leadMagnets.push(leadMagnet);
     node.isEndOfWord = true;
+    this.cache = {};
   }
 
   insertTemplate(template: any) {
@@ -52,9 +55,13 @@ class Trie {
     }
     node.templates.push(template);
     node.isEndOfWord = true;
+    this.cache = {};
   }
 
   searchLeadMagnets(query: string) {
+    if (this.cache[query]) {
+      return this.cache[query];
+    }
     let node = this.root;
     for (let char of query.toLowerCase()) {
       if (!node.children[char]) {
@@ -62,10 +69,15 @@ class Trie {
       }
       node = node.children[char];
     }
-    return this.collectLeadMagnets(node);
+    const leadMagnets = this.collectLeadMagnets(node);
+    this.cache[query] = leadMagnets;
+    return leadMagnets;
   }
 
   searchTemplates(query: string) {
+    if (this.cache[query]) {
+      return this.cache[query];
+    }
     let node = this.root;
     for (let char of query.toLowerCase()) {
       if (!node.children[char]) {
@@ -73,7 +85,9 @@ class Trie {
       }
       node = node.children[char];
     }
-    return this.collectTemplates(node);
+    const templates = this.collectTemplates(node);
+    this.cache[query] = templates;
+    return templates;
   }
 
   collectLeadMagnets(node: TrieNode) {
@@ -104,6 +118,7 @@ class Trie {
     if (node.leadMagnets.length === 0 && !node.isEndOfWord) {
       this.removeNode(node);
     }
+    this.cache = {};
   }
 
   removeTemplate(template: any) {
@@ -118,172 +133,58 @@ class Trie {
     if (node.templates.length === 0 && !node.isEndOfWord) {
       this.removeNode(node);
     }
+    this.cache = {};
   }
 
-  removeNode(node: TrieNode) {
+  private removeNode(node: TrieNode) {
     let parent = this.root;
-    let path = [];
-    while (parent !== node) {
-      for (let char in parent.children) {
-        if (parent.children[char] === node) {
-          path.push(char);
-          parent = parent.children[char];
-          break;
-        }
+    let char = '';
+    for (let c in parent.children) {
+      if (parent.children[c] === node) {
+        char = c;
+        break;
       }
+      parent = parent.children[c];
     }
-    for (let i = path.length - 1; i >= 0; i--) {
-      let char = path[i];
-      let parentNode = this.root;
-      for (let j = 0; j < i; j++) {
-        parentNode = parentNode.children[path[j]];
-      }
-      if (parentNode.children[char].children || parentNode.children[char].leadMagnets.length > 0 || parentNode.children[char].templates.length > 0) {
-        return;
-      }
-      delete parentNode.children[char];
+    if (char) {
+      delete parent.children[char];
     }
-  }
-
-  autocompleteLeadMagnets(query: string) {
-    let node = this.root;
-    for (let char of query.toLowerCase()) {
-      if (!node.children[char]) {
-        return [];
-      }
-      node = node.children[char];
-    }
-    return this.collectAutocompleteLeadMagnets(node);
-  }
-
-  collectAutocompleteLeadMagnets(node: TrieNode) {
-    let leadMagnets = [...node.leadMagnets];
-    for (let child of Object.values(node.children)) {
-      leadMagnets = leadMagnets.concat(this.collectAutocompleteLeadMagnets(child));
-    }
-    return leadMagnets;
-  }
-
-  autocompleteTemplates(query: string) {
-    let node = this.root;
-    for (let char of query.toLowerCase()) {
-      if (!node.children[char]) {
-        return [];
-      }
-      node = node.children[char];
-    }
-    return this.collectAutocompleteTemplates(node);
-  }
-
-  collectAutocompleteTemplates(node: TrieNode) {
-    let templates = [...node.templates];
-    for (let child of Object.values(node.children)) {
-      templates = templates.concat(this.collectAutocompleteTemplates(child));
-    }
-    return templates;
   }
 }
 
-const LeadMagnetBuilder = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [autocompleteLeadMagnets, setAutocompleteLeadMagnets] = useState([]);
-  const [autocompleteTemplates, setAutocompleteTemplates] = useState([]);
-  const [filteredLeadMagnets, setFilteredLeadMagnets] = useState([]);
-  const [filteredTemplates, setFilteredTemplates] = useState([]);
+export default function DashboardPage() {
   const [leadMagnets, setLeadMagnets] = useState([]);
   const [templates, setTemplates] = useState([]);
+  const [query, setQuery] = useState('');
   const trie = new Trie();
 
   useEffect(() => {
     const storedLeadMagnets = useLocalStorage('leadMagnets');
     const storedTemplates = useLocalStorage('templates');
-    if (storedLeadMagnets) {
-      setLeadMagnets(storedLeadMagnets);
-      storedLeadMagnets.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
-    }
-    if (storedTemplates) {
-      setTemplates(storedTemplates);
-      storedTemplates.forEach((template) => trie.insertTemplate(template));
-    }
+    setLeadMagnets(storedLeadMagnets);
+    setTemplates(storedTemplates);
+    storedLeadMagnets.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
+    storedTemplates.forEach((template) => trie.insertTemplate(template));
   }, []);
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.length > 0) {
-      setAutocompleteLeadMagnets(trie.autocompleteLeadMagnets(query));
-      setAutocompleteTemplates(trie.autocompleteTemplates(query));
-    } else {
-      setAutocompleteLeadMagnets([]);
-      setAutocompleteTemplates([]);
-    }
-  };
-
-  const handleFilter = (query: string) => {
-    if (query.length > 0) {
-      setFilteredLeadMagnets(trie.searchLeadMagnets(query));
-      setFilteredTemplates(trie.searchTemplates(query));
-    } else {
-      setFilteredLeadMagnets(leadMagnets);
-      setFilteredTemplates(templates);
-    }
+    setQuery(query);
+    const leadMagnets = trie.searchLeadMagnets(query);
+    const templates = trie.searchTemplates(query);
+    setLeadMagnets(leadMagnets);
+    setTemplates(templates);
   };
 
   return (
     <div>
-      <input
-        type="search"
-        value={searchQuery}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Search lead magnets and templates"
-      />
-      {autocompleteLeadMagnets.length > 0 && (
-        <ul>
-          {autocompleteLeadMagnets.map((leadMagnet) => (
-            <li key={leadMagnet.name}>{leadMagnet.name}</li>
-          ))}
-        </ul>
-      )}
-      {autocompleteTemplates.length > 0 && (
-        <ul>
-          {autocompleteTemplates.map((template) => (
-            <li key={template.name}>{template.name}</li>
-          ))}
-        </ul>
-      )}
-      <Select
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'leadMagnets', label: 'Lead Magnets' },
-          { value: 'templates', label: 'Templates' },
-        ]}
-        value="all"
-        onChange={(value) => handleFilter(value)}
-      />
-      {filteredLeadMagnets.length > 0 && (
-        <div>
-          <h2>Lead Magnets</h2>
-          {filteredLeadMagnets.map((leadMagnet) => (
-            <LeadMagnetCard key={leadMagnet.name} leadMagnet={leadMagnet} />
-          ))}
-        </div>
-      )}
-      {filteredTemplates.length > 0 && (
-        <div>
-          <h2>Templates</h2>
-          {filteredTemplates.map((template) => (
-            <TemplateCard key={template.name} template={template} />
-          ))}
-        </div>
-      )}
-      <AnalyticsCard />
-      <SettingsCard />
-      <PricingCard />
+      <h1>Lead Magnet Builder</h1>
+      <input type="search" value={query} onChange={(e) => handleSearch(e.target.value)} />
       <Accordion>
         <AccordionItem>
           <AccordionButton>Lead Magnets</AccordionButton>
           <AccordionPanel>
             {leadMagnets.map((leadMagnet) => (
-              <LeadMagnetCard key={leadMagnet.name} leadMagnet={leadMagnet} />
+              <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
             ))}
           </AccordionPanel>
         </AccordionItem>
@@ -291,13 +192,30 @@ const LeadMagnetBuilder = () => {
           <AccordionButton>Templates</AccordionButton>
           <AccordionPanel>
             {templates.map((template) => (
-              <TemplateCard key={template.name} template={template} />
+              <TemplateCard key={template.id} template={template} />
             ))}
           </AccordionPanel>
         </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Analytics</AccordionButton>
+          <AccordionPanel>
+            <AnalyticsCard />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Settings</AccordionButton>
+          <AccordionPanel>
+            <SettingsCard />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Pricing</AccordionButton>
+          <AccordionPanel>
+            <PricingCard />
+          </AccordionPanel>
+        </AccordionItem>
       </Accordion>
+      <Select />
     </div>
   );
-};
-
-export default LeadMagnetBuilder;
+}

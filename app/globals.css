@@ -22,7 +22,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold;
-    color: #333;
+    color: #333 dark:text-gray-200;
     margin-bottom: 0.5rem;
     transition: color 0.3s ease;
   }
@@ -53,24 +53,24 @@
 
   p {
     @apply text-base md:text-lg lg:text-xl xl:text-2xl;
-    color: #666;
+    color: #666 dark:text-gray-400;
     margin-bottom: 1rem;
     transition: color 0.3s ease;
   }
 
   a {
-    @apply text-blue-600 transition-colors;
+    @apply text-blue-600 dark:text-blue-400 transition-colors;
     text-decoration: underline;
     transition: transform 0.2s ease;
   }
 
   a:hover {
-    @apply text-blue-800;
+    @apply text-blue-800 dark:text-blue-500;
     transform: scale(1.05);
   }
 
   button {
-    @apply bg-blue-600 text-white transition-colors;
+    @apply bg-blue-600 dark:bg-blue-800 text-white transition-colors;
     border: none;
     border-radius: 0.25rem;
     cursor: pointer;
@@ -81,7 +81,7 @@
   }
 
   button:hover {
-    @apply bg-blue-800;
+    @apply bg-blue-800 dark:bg-blue-900;
     transform: scale(1.05);
   }
 
@@ -107,7 +107,7 @@
   }
 
   .dark-mode-toggle input {
-    @apply absolute block w-6 h-6 rounded-full bg-white shadow-md cursor-pointer;
+    @apply absolute block w-6 h-6 rounded-full bg-white dark:bg-gray-600 shadow-md cursor-pointer;
     top: 50%;
     transform: translateY(-50%);
     transition: transform 0.3s ease;
@@ -122,9 +122,9 @@
   }
 
   .dark-mode-toggle span {
-    @apply block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer;
+    @apply block overflow-hidden h-6 rounded-full bg-gray-300 dark:bg-gray-600 cursor-pointer;
   }
 
   .dark-mode-toggle span:before {
-    @apply block h-6 rounded-full bg-white;
+    @apply block h-6 rounded-full bg-white dark:bg-gray-200;
   }
