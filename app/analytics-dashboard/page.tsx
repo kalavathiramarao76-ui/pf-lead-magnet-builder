@@ -5,8 +5,7 @@ import { LeadMagnet, LeadMagnetAnalytics } from '../types';
 import AnalyticsChart from '../components/analytics-chart';
 import LeadMagnetCard from '../components/lead-magnet-card';
 import PageLayout from '../components/page-layout';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { DateRangePicker, DateRange } from '@mantine/dates';
 import Loader from '../components/loader';
 
 const AnalyticsDashboardPage = () => {
@@ -14,10 +13,7 @@ const AnalyticsDashboardPage = () => {
   const [leadMagnets, setLeadMagnets] = useState<LeadMagnet[]>([]);
   const [selectedLeadMagnets, setSelectedLeadMagnets] = useState<LeadMagnet[]>([]);
   const [analytics, setAnalytics] = useState<Record<string, LeadMagnetAnalytics>>({});
-  const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null }>({
-    startDate: null,
-    endDate: null,
-  });
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
   const [predefinedDateRange, setPredefinedDateRange] = useState<string | null>(null);
   const [isLoadingLeadMagnets, setIsLoadingLeadMagnets] = useState(true);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
@@ -49,7 +45,7 @@ const AnalyticsDashboardPage = () => {
     }
     if (isSelected) {
       setIsLoadingAnalytics(true);
-      getBatchLeadMagnetAnalytics([leadMagnet.id], dateRange.startDate, dateRange.endDate).then((data) => {
+      getBatchLeadMagnetAnalytics([leadMagnet.id], dateRange?.from, dateRange?.to).then((data) => {
         setAnalytics((prevAnalytics) => ({ ...prevAnalytics, ...data }));
         setIsLoadingAnalytics(false);
       });
@@ -61,14 +57,14 @@ const AnalyticsDashboardPage = () => {
     }
   };
 
-  const handleDateRangeChange = (startDate: Date | null, endDate: Date | null) => {
-    setDateRange({ startDate, endDate });
+  const handleDateRangeChange = (range: DateRange | null) => {
+    setDateRange(range);
     setPredefinedDateRange(null);
     setIsLoadingAnalytics(true);
     getBatchLeadMagnetAnalytics(
       selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
-      startDate,
-      endDate
+      range?.from,
+      range?.to
     ).then((data) => {
       setAnalytics(data);
       setIsLoadingAnalytics(false);
@@ -77,38 +73,42 @@ const AnalyticsDashboardPage = () => {
 
   return (
     <PageLayout>
-      {isLoadingLeadMagnets ? (
-        <Loader />
-      ) : (
-        <div>
-          {leadMagnets.map((leadMagnet) => (
-            <LeadMagnetCard
-              key={leadMagnet.id}
-              leadMagnet={leadMagnet}
-              isSelected={selectedLeadMagnets.includes(leadMagnet)}
-              onLeadMagnetSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-bold">Lead Magnets</h2>
+          <div className="flex flex-wrap gap-2">
+            {leadMagnets.map((leadMagnet) => (
+              <LeadMagnetCard
+                key={leadMagnet.id}
+                leadMagnet={leadMagnet}
+                isSelected={selectedLeadMagnets.includes(leadMagnet)}
+                onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-bold">Date Range</h2>
+          <DateRangePicker
+            value={dateRange}
+            onChange={handleDateRangeChange}
+            placeholder="Select date range"
+            labelFormat="MMMM dd, yyyy"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-bold">Analytics</h2>
+          {isLoadingAnalytics ? (
+            <Loader />
+          ) : (
+            <AnalyticsChart
+              analytics={analytics}
+              chartType={chartType}
+              chartOptions={chartOptions}
             />
-          ))}
-          {selectedLeadMagnets.length > 0 && (
-            <div>
-              <DatePicker
-                selectsRange={true}
-                startDate={dateRange.startDate}
-                endDate={dateRange.endDate}
-                onChange={(update) => {
-                  handleDateRangeChange(update[0], update[1]);
-                }}
-              />
-              <AnalyticsChart
-                chartType={chartType}
-                chartOptions={chartOptions}
-                analytics={analytics}
-                leadMagnets={selectedLeadMagnets}
-              />
-            </div>
           )}
         </div>
-      )}
+      </div>
     </PageLayout>
   );
 };

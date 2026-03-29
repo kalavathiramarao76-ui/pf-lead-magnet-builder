@@ -9,6 +9,86 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '../components/Accordion';
 import { Select } from '../components/Select';
 
+class TrieNode {
+  children: { [key: string]: TrieNode };
+  leadMagnets: any[];
+  templates: any[];
+
+  constructor() {
+    this.children = {};
+    this.leadMagnets = [];
+    this.templates = [];
+  }
+}
+
+class Trie {
+  root: TrieNode;
+
+  constructor() {
+    this.root = new TrieNode();
+  }
+
+  insertLeadMagnet(leadMagnet: any) {
+    let node = this.root;
+    for (let char of leadMagnet.name) {
+      if (!node.children[char]) {
+        node.children[char] = new TrieNode();
+      }
+      node = node.children[char];
+    }
+    node.leadMagnets.push(leadMagnet);
+  }
+
+  insertTemplate(template: any) {
+    let node = this.root;
+    for (let char of template.name) {
+      if (!node.children[char]) {
+        node.children[char] = new TrieNode();
+      }
+      node = node.children[char];
+    }
+    node.templates.push(template);
+  }
+
+  searchLeadMagnets(query: string) {
+    let node = this.root;
+    for (let char of query) {
+      if (!node.children[char]) {
+        return [];
+      }
+      node = node.children[char];
+    }
+    return this.collectLeadMagnets(node);
+  }
+
+  searchTemplates(query: string) {
+    let node = this.root;
+    for (let char of query) {
+      if (!node.children[char]) {
+        return [];
+      }
+      node = node.children[char];
+    }
+    return this.collectTemplates(node);
+  }
+
+  collectLeadMagnets(node: TrieNode) {
+    let leadMagnets = [...node.leadMagnets];
+    for (let child of Object.values(node.children)) {
+      leadMagnets = leadMagnets.concat(this.collectLeadMagnets(child));
+    }
+    return leadMagnets;
+  }
+
+  collectTemplates(node: TrieNode) {
+    let templates = [...node.templates];
+    for (let child of Object.values(node.children)) {
+      templates = templates.concat(this.collectTemplates(child));
+    }
+    return templates;
+  }
+}
+
 const DashboardPage = () => {
   const pathname = usePathname();
   const [leadMagnets, setLeadMagnets] = useState([]);
@@ -29,6 +109,7 @@ const DashboardPage = () => {
   const [templateFilter, setTemplateFilter] = useState('all');
   const [filteredLeadMagnets, setFilteredLeadMagnets] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
+  const [trie, setTrie] = useState(new Trie());
 
   const { getItem, setItem } = useLocalStorage();
 
@@ -65,83 +146,68 @@ const DashboardPage = () => {
       if (leadMagnetFilter === 'all') {
         setFilteredLeadMagnets(leadMagnets);
       } else {
-        setFilteredLeadMagnets(leadMagnets.filter((leadMagnet) => leadMagnet.name.includes(leadMagnetFilter)));
+        setFilteredLeadMagnets(trie.searchLeadMagnets(leadMagnetFilter));
       }
     };
 
     filterLeadMagnets();
-  }, [leadMagnetFilter, leadMagnets]);
+  }, [leadMagnetFilter, trie]);
 
   useEffect(() => {
     const filterTemplates = () => {
       if (templateFilter === 'all') {
         setFilteredTemplates(templates);
       } else {
-        setFilteredTemplates(templates.filter((template) => template.name.includes(templateFilter)));
+        setFilteredTemplates(trie.searchTemplates(templateFilter));
       }
     };
 
     filterTemplates();
-  }, [templateFilter, templates]);
+  }, [templateFilter, trie]);
 
-  const handleCreateLeadMagnet = () => {
-    const newLeadMagnet = {};
+  useEffect(() => {
+    const buildTrie = () => {
+      const newTrie = new Trie();
+      leadMagnets.forEach((leadMagnet) => newTrie.insertLeadMagnet(leadMagnet));
+      templates.forEach((template) => newTrie.insertTemplate(template));
+      setTrie(newTrie);
+    };
 
-    setLeadMagnets([...leadMagnets, newLeadMagnet]);
-    setItem('leadMagnets', JSON.stringify([...leadMagnets, newLeadMagnet]));
-  };
-
-  const leadMagnetFilterOptions = [
-    { value: 'all', label: 'All' },
-    { value: 'published', label: 'Published' },
-    { value: 'draft', label: 'Draft' },
-  ];
-
-  const templateFilterOptions = [
-    { value: 'all', label: 'All' },
-    { value: 'used', label: 'Used' },
-    { value: 'unused', label: 'Unused' },
-  ];
+    buildTrie();
+  }, [leadMagnets, templates]);
 
   return (
     <div>
-      <h1>Lead Magnet Builder Dashboard</h1>
+      <LeadMagnetCard leadMagnets={filteredLeadMagnets} />
+      <TemplateCard templates={filteredTemplates} />
+      <AnalyticsCard analytics={analytics} />
+      <SettingsCard settings={settings} />
+      <PricingCard pricing={pricing} />
       <Accordion>
         <AccordionItem>
-          <AccordionButton>Lead Magnet Filters</AccordionButton>
+          <AccordionButton>Filter</AccordionButton>
           <AccordionPanel>
             <Select
               value={leadMagnetFilter}
               onChange={(e) => setLeadMagnetFilter(e.target.value)}
-              options={leadMagnetFilterOptions}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
             />
-          </AccordionPanel>
-        </AccordionItem>
-        <AccordionItem>
-          <AccordionButton>Template Filters</AccordionButton>
-          <AccordionPanel>
             <Select
               value={templateFilter}
               onChange={(e) => setTemplateFilter(e.target.value)}
-              options={templateFilterOptions}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+              ]}
             />
           </AccordionPanel>
         </AccordionItem>
       </Accordion>
-      <div>
-        {filteredLeadMagnets.map((leadMagnet) => (
-          <LeadMagnetCard key={leadMagnet.name} leadMagnet={leadMagnet} />
-        ))}
-      </div>
-      <div>
-        {filteredTemplates.map((template) => (
-          <TemplateCard key={template.name} template={template} />
-        ))}
-      </div>
-      <AnalyticsCard analytics={analytics} />
-      <SettingsCard settings={settings} />
-      <PricingCard pricing={pricing} />
-      <button onClick={handleCreateLeadMagnet}>Create New Lead Magnet</button>
     </div>
   );
 };
