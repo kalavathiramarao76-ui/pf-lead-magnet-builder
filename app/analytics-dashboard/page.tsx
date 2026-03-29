@@ -27,6 +27,7 @@ const AnalyticsDashboardPage = () => {
     displayLegend: true,
     displayGrid: true,
   });
+  const [isChartLoading, setIsChartLoading] = useState(false);
 
   useEffect(() => {
     const storedLeadMagnets = localStorage.getItem('leadMagnets');
@@ -50,9 +51,11 @@ const AnalyticsDashboardPage = () => {
     }
     if (isSelected) {
       setIsLoadingAnalytics(true);
+      setIsChartLoading(true);
       getBatchLeadMagnetAnalytics([leadMagnet.id], dateRange?.from, dateRange?.to).then((data) => {
         setAnalytics((prevAnalytics) => ({ ...prevAnalytics, ...data }));
         setIsLoadingAnalytics(false);
+        setIsChartLoading(false);
       });
     } else {
       setAnalytics((prevAnalytics) => {
@@ -66,6 +69,7 @@ const AnalyticsDashboardPage = () => {
     setDateRange(range);
     setPredefinedDateRange(null);
     setIsLoadingAnalytics(true);
+    setIsChartLoading(true);
     getBatchLeadMagnetAnalytics(
       selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
       range?.from,
@@ -73,6 +77,7 @@ const AnalyticsDashboardPage = () => {
     ).then((data) => {
       setAnalytics(data);
       setIsLoadingAnalytics(false);
+      setIsChartLoading(false);
     });
   };
 
@@ -80,6 +85,7 @@ const AnalyticsDashboardPage = () => {
     setDateRange(range);
     setPredefinedDateRange(null);
     setIsLoadingAnalytics(true);
+    setIsChartLoading(true);
     getBatchLeadMagnetAnalytics(
       selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
       range?.from,
@@ -87,60 +93,36 @@ const AnalyticsDashboardPage = () => {
     ).then((data) => {
       setAnalytics(data);
       setIsLoadingAnalytics(false);
+      setIsChartLoading(false);
     });
-  };
-
-  const dateRangePickerSettings: DateRangePickerSettings = {
-    allowSingleDateInRange: true,
-    allowDeselect: true,
-    minDate: new Date('2020-01-01'),
-    maxDate: new Date(),
-    excludeDate: (date) => date.getDay() === 0 || date.getDay() === 6,
-    bounds: [
-      { min: new Date('2020-01-01'), max: new Date('2022-12-31') },
-    ],
   };
 
   return (
     <PageLayout>
-      <div>
-        <h1>Lead Magnet Builder Analytics Dashboard</h1>
+      {isLoadingLeadMagnets ? (
+        <Loader />
+      ) : (
         <div>
+          {selectedLeadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+          ))}
           <DateRangePicker
             value={dateRange}
-            onChange={handleDateRangePickerChange}
-            settings={dateRangePickerSettings}
+            onChange={handleDateRangeChange}
             placeholder="Select date range"
-            label="Date range"
-            withinPortal
           />
-        </div>
-        {isLoadingLeadMagnets ? (
-          <Loader />
-        ) : (
-          <div>
-            {leadMagnets.map((leadMagnet) => (
-              <LeadMagnetCard
-                key={leadMagnet.id}
-                leadMagnet={leadMagnet}
-                isSelected={selectedLeadMagnets.includes(leadMagnet)}
-                onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
-              />
-            ))}
-          </div>
-        )}
-        {isLoadingAnalytics ? (
-          <Loader />
-        ) : (
-          <div>
+          {isLoadingAnalytics || isChartLoading ? (
+            <Loader />
+          ) : (
             <AnalyticsChart
               analytics={analytics}
+              leadMagnets={selectedLeadMagnets}
               chartType={chartType}
               chartOptions={chartOptions}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </PageLayout>
   );
 };

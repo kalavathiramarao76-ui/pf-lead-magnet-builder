@@ -160,62 +160,21 @@
     @apply justify-center;
   }
 
-  .lead-magnet-builder {
-    @apply max-w-5xl mx-auto p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12;
-    @apply bg-white dark:bg-gray-800;
-    @apply rounded-lg shadow-md;
-    @apply overflow-hidden;
+  .dark-mode-button {
+    @apply absolute top-4 right-4;
   }
 
-  .lead-magnet-builder-header {
-    @apply bg-blue-600 text-white;
-    @apply p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12;
-    @apply rounded-t-lg;
+  .dark-mode-button label {
+    @apply cursor-pointer;
   }
 
-  .lead-magnet-builder-content {
-    @apply p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12;
-  }
-
-  .lead-magnet-builder-footer {
-    @apply bg-gray-100 dark:bg-gray-700;
-    @apply p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12;
-    @apply rounded-b-lg;
-  }
-
-  .responsive-image {
-    @apply max-w-full h-auto;
-    @apply md:max-w-md lg:max-w-lg xl:max-w-xl;
-    margin: 1rem;
-  }
-
-  .responsive-video {
-    @apply max-w-full h-auto;
-    @apply md:max-w-md lg:max-w-lg xl:max-w-xl;
-    margin: 1rem;
-  }
-
-  .responsive-table {
-    @apply w-full;
-    @apply md:w-3/4 lg:w-2/3 xl:w-1/2;
-    margin: 1rem;
+  .dark-mode-button .dark-mode-toggle {
+    @apply inline-block;
   }
 }
 
 @layer utilities {
-  .lead-magnet-builder-shadow {
-    @apply shadow-md;
-  }
-
-  .lead-magnet-builder-shadow-lg {
-    @apply shadow-lg;
-  }
-
-  .lead-magnet-builder-shadow-xl {
-    @apply shadow-xl;
-  }
-
-  .lead-magnet-builder-shadow-2xl {
-    @apply shadow-2xl;
+  .dark-mode-button {
+    @apply inline-block;
   }
 }
