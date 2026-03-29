@@ -74,59 +74,49 @@ const AnalyticsDashboardPage = () => {
   const handleDateRangePickerChange = (range: DateRange | null) => {
     setDateRange(range);
     setPredefinedDateRange(null);
-    if (range) {
-      setIsLoadingAnalytics(true);
-      getBatchLeadMagnetAnalytics(
-        selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
-        range.from,
-        range.to
-      ).then((data) => {
-        setAnalytics(data);
-        setIsLoadingAnalytics(false);
-      });
-    }
+    setIsLoadingAnalytics(true);
+    getBatchLeadMagnetAnalytics(
+      selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
+      range?.from,
+      range?.to
+    ).then((data) => {
+      setAnalytics(data);
+      setIsLoadingAnalytics(false);
+    });
   };
 
   return (
     <PageLayout>
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
+      {isLoadingLeadMagnets ? (
+        <Loader />
+      ) : (
+        <div>
+          {leadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard
+              key={leadMagnet.id}
+              leadMagnet={leadMagnet}
+              isSelected={selectedLeadMagnets.includes(leadMagnet)}
+              onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+            />
+          ))}
           <DateRangePicker
             value={dateRange}
-            onChange={handleDateRangePickerChange}
-            placeholder="Select a date range"
-            label="Date Range"
-            allowSingleDateInRange
-            allowDeselect
-            clearable
+            onChange={handleDateRangeChange}
+            placeholder="Select date range"
+            label="Date range"
           />
-        </div>
-        {isLoadingLeadMagnets ? (
-          <Loader />
-        ) : (
-          <div className="flex flex-col gap-4">
-            {leadMagnets.map((leadMagnet) => (
-              <LeadMagnetCard
-                key={leadMagnet.id}
-                leadMagnet={leadMagnet}
-                isSelected={selectedLeadMagnets.includes(leadMagnet)}
-                onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
-              />
-            ))}
-          </div>
-        )}
-        {isLoadingAnalytics ? (
-          <Loader />
-        ) : (
-          <div className="flex flex-col gap-4">
+          {isLoadingAnalytics ? (
+            <Loader />
+          ) : (
             <AnalyticsChart
               analytics={analytics}
               chartType={chartType}
               chartOptions={chartOptions}
+              leadMagnets={selectedLeadMagnets}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </PageLayout>
   );
 };

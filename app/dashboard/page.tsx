@@ -126,91 +126,84 @@ class Trie {
 
   removeNode(node: TrieNode) {
     let parent = this.root;
-    for (let char of Object.keys(this.root.children)) {
-      if (this.root.children[char] === node) {
-        delete parent.children[char];
-        return;
+    let path = [];
+    while (parent !== node) {
+      for (let child of Object.keys(parent.children)) {
+        if (parent.children[child] === node) {
+          path.push(child);
+          parent = parent.children[child];
+          break;
+        }
       }
-      parent = parent.children[char];
     }
+    let key = path.pop();
+    delete parent.children[key];
   }
 }
 
 const DashboardPage = () => {
-  const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState('');
   const [leadMagnets, setLeadMagnets] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [analytics, setAnalytics] = useState({});
-  const [settings, setSettings] = useState({});
-  const [pricing, setPricing] = useState({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [dragging, setDragging] = useState(null);
-  const [dragOver, setDragOver] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [filterType, setFilterType] = useState('');
   const trie = new Trie();
 
   useEffect(() => {
-    const storedLeadMagnets = useLocalStorage('leadMagnets');
-    const storedTemplates = useLocalStorage('templates');
-    if (storedLeadMagnets) {
-      storedLeadMagnets.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
-      setLeadMagnets(storedLeadMagnets);
-    }
-    if (storedTemplates) {
-      storedTemplates.forEach((template) => trie.insertTemplate(template));
-      setTemplates(storedTemplates);
-    }
+    // Initialize lead magnets and templates
+    const leadMagnetsData = [
+      { name: 'Lead Magnet 1' },
+      { name: 'Lead Magnet 2' },
+      { name: 'Lead Magnet 3' },
+    ];
+    const templatesData = [
+      { name: 'Template 1' },
+      { name: 'Template 2' },
+      { name: 'Template 3' },
+    ];
+
+    leadMagnetsData.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
+    templatesData.forEach((template) => trie.insertTemplate(template));
+
+    setLeadMagnets(leadMagnetsData);
+    setTemplates(templatesData);
   }, []);
 
   const handleSearch = (query: string) => {
-    setIsSearching(true);
-    const leadMagnetResults = trie.searchLeadMagnets(query);
-    const templateResults = trie.searchTemplates(query);
-    setSearchResults([...leadMagnetResults, ...templateResults]);
-    setIsSearching(false);
+    setSearchQuery(query);
+    const searchedLeadMagnets = trie.searchLeadMagnets(query);
+    const searchedTemplates = trie.searchTemplates(query);
+    setLeadMagnets(searchedLeadMagnets);
+    setTemplates(searchedTemplates);
   };
 
   return (
     <div>
-      <LeadMagnetCard leadMagnets={leadMagnets} />
-      <TemplateCard templates={templates} />
-      <AnalyticsCard analytics={analytics} />
-      <SettingsCard settings={settings} />
-      <PricingCard pricing={pricing} />
+      <input
+        type="search"
+        value={searchQuery}
+        onChange={(e) => handleSearch(e.target.value)}
+        placeholder="Search lead magnets and templates"
+      />
+      <h2>Lead Magnets</h2>
+      {leadMagnets.map((leadMagnet) => (
+        <LeadMagnetCard key={leadMagnet.name} leadMagnet={leadMagnet} />
+      ))}
+      <h2>Templates</h2>
+      {templates.map((template) => (
+        <TemplateCard key={template.name} template={template} />
+      ))}
+      <h2>Analytics</h2>
+      <AnalyticsCard />
+      <h2>Settings</h2>
+      <SettingsCard />
+      <h2>Pricing</h2>
+      <PricingCard />
       <Accordion>
         <AccordionItem>
-          <AccordionButton>Search</AccordionButton>
-          <AccordionPanel>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search lead magnets and templates"
-            />
-            <button onClick={() => handleSearch(searchTerm)}>Search</button>
-            {isSearching ? (
-              <p>Searching...</p>
-            ) : (
-              <ul>
-                {searchResults.map((result) => (
-                  <li key={result.name}>{result.name}</li>
-                ))}
-              </ul>
-            )}
-          </AccordionPanel>
+          <AccordionButton>Accordion Button</AccordionButton>
+          <AccordionPanel>Accordion Panel</AccordionPanel>
         </AccordionItem>
       </Accordion>
-      <Select
-        value={filterType}
-        onChange={(e) => setFilterType(e.target.value)}
-        options={[
-          { value: '', label: 'All' },
-          { value: 'leadMagnet', label: 'Lead Magnets' },
-          { value: 'template', label: 'Templates' },
-        ]}
-      />
+      <Select />
     </div>
   );
 };

@@ -77,6 +77,10 @@
     @apply bg-blue-800;
   }
 
+  button[disabled] {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
   img {
     @apply max-w-full h-auto;
     margin: 1rem;
@@ -119,6 +123,18 @@
   .dark-mode-toggle span:before {
     @apply block h-6 rounded-full bg-white;
   }
+
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  [role="link"] {
+    text-decoration: underline;
+  }
+
+  [aria-disabled="true"] {
+    @apply opacity-50 cursor-not-allowed;
+  }
 }
 
 @layer components {
@@ -155,31 +171,5 @@
   .dark-mode-toggle-label {
     @apply text-base md:text-lg lg:text-xl xl:text-2xl;
     color: #666 dark:text-gray-300;
-  }
-}
-
-@layer utilities {
-  @media (max-width: 320px) {
-    :root {
-      font-size: 12px;
-    }
-  }
-
-  @media (min-width: 321px) and (max-width: 640px) {
-    :root {
-      font-size: 14px;
-    }
-  }
-
-  @media (min-width: 641px) and (max-width: 1280px) {
-    :root {
-      font-size: 16px;
-    }
-  }
-
-  @media (min-width: 1281px) {
-    :root {
-      font-size: 18px;
-    }
   }
 }
