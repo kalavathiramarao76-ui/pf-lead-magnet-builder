@@ -115,47 +115,49 @@ class Trie {
       node = node.children[char];
     }
     node.leadMagnets = node.leadMagnets.filter((lm) => lm !== leadMagnet);
-    if (node.leadMagnets.length === 0 && !node.isEndOfWord) {
-      this.removeNode(node);
-    }
     this.cache = {};
-  }
-
-  removeTemplate(template: any) {
-    let node = this.root;
-    for (let char of template.name.toLowerCase()) {
-      if (!node.children[char]) {
-        return;
-      }
-      node = node.children[char];
-    }
-    node.templates = node.templates.filter((t) => t !== template);
-    if (node.templates.length === 0 && !node.isEndOfWord) {
-      this.removeNode(node);
-    }
-    this.cache = {};
-  }
-
-  private removeNode(node: TrieNode) {
-    let parent = this.root;
-    let char = '';
-    for (let c in parent.children) {
-      if (parent.children[c] === node) {
-        char = c;
-        break;
-      }
-      parent = parent.children[c];
-    }
-    if (char) {
-      delete parent.children[char];
-    }
   }
 }
 
-export default function DashboardPage() {
+const SearchBar = () => {
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ leadMagnets: [], templates: [] });
+  const trie = new Trie();
+
+  const handleSearch = (e: any) => {
+    setQuery(e.target.value);
+    const leadMagnets = trie.searchLeadMagnets(e.target.value);
+    const templates = trie.searchTemplates(e.target.value);
+    setSearchResults({ leadMagnets, templates });
+  };
+
+  return (
+    <div>
+      <input type="text" value={query} onChange={handleSearch} placeholder="Search lead magnets and templates" />
+      {searchResults.leadMagnets.length > 0 && (
+        <div>
+          <h2>Lead Magnets</h2>
+          {searchResults.leadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+          ))}
+        </div>
+      )}
+      {searchResults.templates.length > 0 && (
+        <div>
+          <h2>Templates</h2>
+          {searchResults.templates.map((template) => (
+            <TemplateCard key={template.id} template={template} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DashboardPage = () => {
+  const pathname = usePathname();
   const [leadMagnets, setLeadMagnets] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [query, setQuery] = useState('');
   const trie = new Trie();
 
   useEffect(() => {
@@ -167,18 +169,9 @@ export default function DashboardPage() {
     storedTemplates.forEach((template) => trie.insertTemplate(template));
   }, []);
 
-  const handleSearch = (query: string) => {
-    setQuery(query);
-    const leadMagnets = trie.searchLeadMagnets(query);
-    const templates = trie.searchTemplates(query);
-    setLeadMagnets(leadMagnets);
-    setTemplates(templates);
-  };
-
   return (
     <div>
-      <h1>Lead Magnet Builder</h1>
-      <input type="search" value={query} onChange={(e) => handleSearch(e.target.value)} />
+      <SearchBar />
       <Accordion>
         <AccordionItem>
           <AccordionButton>Lead Magnets</AccordionButton>
@@ -215,7 +208,8 @@ export default function DashboardPage() {
           </AccordionPanel>
         </AccordionItem>
       </Accordion>
-      <Select />
     </div>
   );
-}
+};
+
+export default DashboardPage;

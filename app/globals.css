@@ -128,3 +128,48 @@
   .dark-mode-toggle span:before {
     @apply block h-6 rounded-full bg-white dark:bg-gray-200;
   }
+}
+
+@layer components {
+  .dark-mode-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .dark-mode-toggle label {
+    @apply cursor-pointer;
+  }
+
+  .dark-mode-toggle input {
+    display: none;
+  }
+
+  .dark-mode-toggle span {
+    @apply bg-gray-300 dark:bg-gray-600;
+    width: 40px;
+    height: 20px;
+    border-radius: 10px;
+    position: relative;
+  }
+
+  .dark-mode-toggle span:before {
+    @apply bg-white dark:bg-gray-200;
+    content: '';
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+  }
+
+  .dark-mode-toggle input:checked + span {
+    @apply bg-blue-600 dark:bg-blue-800;
+  }
+
+  .dark-mode-toggle input:checked + span:before {
+    @apply transform translateX(20px);
+  }
+}
