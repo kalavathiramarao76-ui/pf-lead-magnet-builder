@@ -70,28 +70,19 @@ const AnalyticsDashboardPage = () => {
     setPredefinedDateRange(null);
     setIsLoadingAnalytics(true);
     setIsChartLoading(true);
-    getBatchLeadMagnetAnalytics(
-      selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
-      range?.from,
-      range?.to
-    ).then((data) => {
-      setAnalytics(data);
-      setIsLoadingAnalytics(false);
-      setIsChartLoading(false);
-    });
-  };
-
-  const handleDateRangePickerChange = (range: DateRange | null) => {
-    setDateRange(range);
-    setPredefinedDateRange(null);
-    setIsLoadingAnalytics(true);
-    setIsChartLoading(true);
-    getBatchLeadMagnetAnalytics(
-      selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
-      range?.from,
-      range?.to
-    ).then((data) => {
-      setAnalytics(data);
+    const selectedLeadMagnetIds = selectedLeadMagnets.map((leadMagnet) => leadMagnet.id);
+    getBatchLeadMagnetAnalytics(selectedLeadMagnetIds, range?.from, range?.to).then((data) => {
+      setAnalytics((prevAnalytics) => {
+        const newAnalytics = { ...prevAnalytics };
+        selectedLeadMagnetIds.forEach((id) => {
+          if (data[id]) {
+            newAnalytics[id] = data[id];
+          } else {
+            delete newAnalytics[id];
+          }
+        });
+        return newAnalytics;
+      });
       setIsLoadingAnalytics(false);
       setIsChartLoading(false);
     });
@@ -103,20 +94,25 @@ const AnalyticsDashboardPage = () => {
         <Loader />
       ) : (
         <div>
-          {selectedLeadMagnets.map((leadMagnet) => (
-            <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+          {leadMagnets.map((leadMagnet) => (
+            <LeadMagnetCard
+              key={leadMagnet.id}
+              leadMagnet={leadMagnet}
+              isSelected={selectedLeadMagnets.includes(leadMagnet)}
+              onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+            />
           ))}
           <DateRangePicker
             value={dateRange}
             onChange={handleDateRangeChange}
             placeholder="Select date range"
+            label="Date range"
           />
           {isLoadingAnalytics || isChartLoading ? (
             <Loader />
           ) : (
             <AnalyticsChart
               analytics={analytics}
-              leadMagnets={selectedLeadMagnets}
               chartType={chartType}
               chartOptions={chartOptions}
             />

@@ -128,7 +128,7 @@ class Trie {
     let parent = this.root;
     let path = [];
     while (parent !== node) {
-      for (let child of Object.keys(parent.children)) {
+      for (let child in parent.children) {
         if (parent.children[child] === node) {
           path.push(child);
           parent = parent.children[child];
@@ -136,13 +136,22 @@ class Trie {
         }
       }
     }
-    let key = path.pop();
-    if (key) {
-      delete parent.children[key];
+    path.reverse();
+    for (let i = 0; i < path.length; i++) {
+      let char = path[i];
+      let parentNode = this.root;
+      for (let j = 0; j < i; j++) {
+        parentNode = parentNode.children[path[j]];
+      }
+      if (Object.keys(parentNode.children[char].children).length === 0) {
+        delete parentNode.children[char];
+      } else {
+        break;
+      }
     }
   }
 
-  autocomplete(query: string) {
+  autocompleteLeadMagnets(query: string) {
     let node = this.root;
     for (let char of query) {
       if (!node.children[char]) {
@@ -150,54 +159,63 @@ class Trie {
       }
       node = node.children[char];
     }
-    return this.collectAutocomplete(node, query);
+    return this.collectLeadMagnetNames(node);
   }
 
-  collectAutocomplete(node: TrieNode, query: string) {
-    let suggestions = [];
-    if (node.isEndOfWord) {
-      suggestions = suggestions.concat(node.leadMagnets.map((lm) => lm.name));
-      suggestions = suggestions.concat(node.templates.map((t) => t.name));
-    }
+  collectLeadMagnetNames(node: TrieNode) {
+    let names = [...node.leadMagnets.map((lm) => lm.name)];
     for (let child of Object.values(node.children)) {
-      suggestions = suggestions.concat(this.collectAutocomplete(child, query));
+      names = names.concat(this.collectLeadMagnetNames(child));
     }
-    return suggestions;
+    return names;
+  }
+
+  autocompleteTemplates(query: string) {
+    let node = this.root;
+    for (let char of query) {
+      if (!node.children[char]) {
+        return [];
+      }
+      node = node.children[char];
+    }
+    return this.collectTemplateNames(node);
+  }
+
+  collectTemplateNames(node: TrieNode) {
+    let names = [...node.templates.map((t) => t.name)];
+    for (let child of Object.values(node.children)) {
+      names = names.concat(this.collectTemplateNames(child));
+    }
+    return names;
   }
 }
 
 const DashboardPage = () => {
+  const [leadMagnets, setLeadMagnets] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
   const trie = new Trie();
 
   useEffect(() => {
-    // Initialize trie with lead magnets and templates
-    const leadMagnets = [
-      { name: 'Lead Magnet 1' },
-      { name: 'Lead Magnet 2' },
-      { name: 'Lead Magnet 3' },
-    ];
-    const templates = [
-      { name: 'Template 1' },
-      { name: 'Template 2' },
-      { name: 'Template 3' },
-    ];
-    leadMagnets.forEach((lm) => trie.insertLeadMagnet(lm));
-    templates.forEach((t) => trie.insertTemplate(t));
+    const storedLeadMagnets = useLocalStorage('leadMagnets');
+    const storedTemplates = useLocalStorage('templates');
+    setLeadMagnets(storedLeadMagnets);
+    setTemplates(storedTemplates);
+    storedLeadMagnets.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
+    storedTemplates.forEach((template) => trie.insertTemplate(template));
   }, []);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const leadMagnets = trie.searchLeadMagnets(query);
-    const templates = trie.searchTemplates(query);
-    setSearchResults(leadMagnets.concat(templates));
+    const leadMagnetSuggestions = trie.autocompleteLeadMagnets(query);
+    const templateSuggestions = trie.autocompleteTemplates(query);
+    setAutocompleteSuggestions([...leadMagnetSuggestions, ...templateSuggestions]);
   };
 
-  const handleAutocomplete = (query: string) => {
-    const suggestions = trie.autocomplete(query);
-    setAutocompleteSuggestions(suggestions);
+  const handleSelectSuggestion = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setAutocompleteSuggestions([]);
   };
 
   return (
@@ -205,35 +223,54 @@ const DashboardPage = () => {
       <input
         type="search"
         value={searchQuery}
-        onChange={(e) => {
-          handleSearch(e.target.value);
-          handleAutocomplete(e.target.value);
-        }}
+        onChange={(e) => handleSearch(e.target.value)}
         placeholder="Search lead magnets and templates"
       />
-      <ul>
-        {autocompleteSuggestions.map((suggestion) => (
-          <li key={suggestion}>{suggestion}</li>
-        ))}
-      </ul>
-      <h2>Search Results</h2>
-      <ul>
-        {searchResults.map((result) => (
-          <li key={result.name}>{result.name}</li>
-        ))}
-      </ul>
-      <LeadMagnetCard />
-      <TemplateCard />
-      <AnalyticsCard />
-      <SettingsCard />
-      <PricingCard />
+      {autocompleteSuggestions.length > 0 && (
+        <ul>
+          {autocompleteSuggestions.map((suggestion) => (
+            <li key={suggestion} onClick={() => handleSelectSuggestion(suggestion)}>
+              {suggestion}
+            </li>
+          ))}
+        </ul>
+      )}
       <Accordion>
         <AccordionItem>
-          <AccordionButton>Accordion Button</AccordionButton>
-          <AccordionPanel>Accordion Panel</AccordionPanel>
+          <AccordionButton>Lead Magnets</AccordionButton>
+          <AccordionPanel>
+            {leadMagnets.map((leadMagnet) => (
+              <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+            ))}
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Templates</AccordionButton>
+          <AccordionPanel>
+            {templates.map((template) => (
+              <TemplateCard key={template.id} template={template} />
+            ))}
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Analytics</AccordionButton>
+          <AccordionPanel>
+            <AnalyticsCard />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Settings</AccordionButton>
+          <AccordionPanel>
+            <SettingsCard />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Pricing</AccordionButton>
+          <AccordionPanel>
+            <PricingCard />
+          </AccordionPanel>
         </AccordionItem>
       </Accordion>
-      <Select />
     </div>
   );
 };
