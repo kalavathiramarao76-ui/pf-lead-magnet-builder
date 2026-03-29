@@ -71,12 +71,40 @@ const AnalyticsDashboardPage = () => {
     });
   };
 
+  const handleDateRangePickerChange = (range: DateRange | null) => {
+    setDateRange(range);
+    setPredefinedDateRange(null);
+    if (range) {
+      setIsLoadingAnalytics(true);
+      getBatchLeadMagnetAnalytics(
+        selectedLeadMagnets.map((leadMagnet) => leadMagnet.id),
+        range.from,
+        range.to
+      ).then((data) => {
+        setAnalytics(data);
+        setIsLoadingAnalytics(false);
+      });
+    }
+  };
+
   return (
     <PageLayout>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-bold">Lead Magnets</h2>
-          <div className="flex flex-wrap gap-2">
+          <DateRangePicker
+            value={dateRange}
+            onChange={handleDateRangePickerChange}
+            placeholder="Select a date range"
+            label="Date Range"
+            allowSingleDateInRange
+            allowDeselect
+            clearable
+          />
+        </div>
+        {isLoadingLeadMagnets ? (
+          <Loader />
+        ) : (
+          <div className="flex flex-col gap-4">
             {leadMagnets.map((leadMagnet) => (
               <LeadMagnetCard
                 key={leadMagnet.id}
@@ -86,28 +114,18 @@ const AnalyticsDashboardPage = () => {
               />
             ))}
           </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-bold">Date Range</h2>
-          <DateRangePicker
-            value={dateRange}
-            onChange={handleDateRangeChange}
-            placeholder="Select date range"
-            labelFormat="MMMM dd, yyyy"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-bold">Analytics</h2>
-          {isLoadingAnalytics ? (
-            <Loader />
-          ) : (
+        )}
+        {isLoadingAnalytics ? (
+          <Loader />
+        ) : (
+          <div className="flex flex-col gap-4">
             <AnalyticsChart
               analytics={analytics}
               chartType={chartType}
               chartOptions={chartOptions}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </PageLayout>
   );

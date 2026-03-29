@@ -13,11 +13,13 @@ class TrieNode {
   children: { [key: string]: TrieNode };
   leadMagnets: any[];
   templates: any[];
+  isEndOfWord: boolean;
 
   constructor() {
     this.children = {};
     this.leadMagnets = [];
     this.templates = [];
+    this.isEndOfWord = false;
   }
 }
 
@@ -37,6 +39,7 @@ class Trie {
       node = node.children[char];
     }
     node.leadMagnets.push(leadMagnet);
+    node.isEndOfWord = true;
   }
 
   insertTemplate(template: any) {
@@ -48,6 +51,7 @@ class Trie {
       node = node.children[char];
     }
     node.templates.push(template);
+    node.isEndOfWord = true;
   }
 
   searchLeadMagnets(query: string) {
@@ -74,18 +78,61 @@ class Trie {
 
   collectLeadMagnets(node: TrieNode) {
     let leadMagnets = [...node.leadMagnets];
-    for (let child of Object.values(node.children)) {
-      leadMagnets = leadMagnets.concat(this.collectLeadMagnets(child));
+    if (node.isEndOfWord) {
+      for (let child of Object.values(node.children)) {
+        leadMagnets = leadMagnets.concat(this.collectLeadMagnets(child));
+      }
     }
     return leadMagnets;
   }
 
   collectTemplates(node: TrieNode) {
     let templates = [...node.templates];
-    for (let child of Object.values(node.children)) {
-      templates = templates.concat(this.collectTemplates(child));
+    if (node.isEndOfWord) {
+      for (let child of Object.values(node.children)) {
+        templates = templates.concat(this.collectTemplates(child));
+      }
     }
     return templates;
+  }
+
+  removeLeadMagnet(leadMagnet: any) {
+    let node = this.root;
+    for (let char of leadMagnet.name) {
+      if (!node.children[char]) {
+        return;
+      }
+      node = node.children[char];
+    }
+    node.leadMagnets = node.leadMagnets.filter((lm) => lm !== leadMagnet);
+    if (node.leadMagnets.length === 0 && !node.isEndOfWord) {
+      this.removeNode(node);
+    }
+  }
+
+  removeTemplate(template: any) {
+    let node = this.root;
+    for (let char of template.name) {
+      if (!node.children[char]) {
+        return;
+      }
+      node = node.children[char];
+    }
+    node.templates = node.templates.filter((t) => t !== template);
+    if (node.templates.length === 0 && !node.isEndOfWord) {
+      this.removeNode(node);
+    }
+  }
+
+  removeNode(node: TrieNode) {
+    let parent = this.root;
+    for (let char of Object.keys(this.root.children)) {
+      if (this.root.children[char] === node) {
+        delete parent.children[char];
+        return;
+      }
+      parent = parent.children[char];
+    }
   }
 }
 
@@ -101,113 +148,69 @@ const DashboardPage = () => {
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [filterType, setFilterType] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [sortBy, setSortBy] = useState('name');
-  const [leadMagnetFilter, setLeadMagnetFilter] = useState('all');
-  const [templateFilter, setTemplateFilter] = useState('all');
-  const [filteredLeadMagnets, setFilteredLeadMagnets] = useState([]);
-  const [filteredTemplates, setFilteredTemplates] = useState([]);
-  const [trie, setTrie] = useState(new Trie());
-
-  const { getItem, setItem } = useLocalStorage();
+  const [filterType, setFilterType] = useState('');
+  const trie = new Trie();
 
   useEffect(() => {
-    const storedLeadMagnets = getItem('leadMagnets');
-    const storedTemplates = getItem('templates');
-    const storedAnalytics = getItem('analytics');
-    const storedSettings = getItem('settings');
-    const storedPricing = getItem('pricing');
-
+    const storedLeadMagnets = useLocalStorage('leadMagnets');
+    const storedTemplates = useLocalStorage('templates');
     if (storedLeadMagnets) {
-      setLeadMagnets(JSON.parse(storedLeadMagnets));
+      storedLeadMagnets.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
+      setLeadMagnets(storedLeadMagnets);
     }
-
     if (storedTemplates) {
-      setTemplates(JSON.parse(storedTemplates));
-    }
-
-    if (storedAnalytics) {
-      setAnalytics(JSON.parse(storedAnalytics));
-    }
-
-    if (storedSettings) {
-      setSettings(JSON.parse(storedSettings));
-    }
-
-    if (storedPricing) {
-      setPricing(JSON.parse(storedPricing));
+      storedTemplates.forEach((template) => trie.insertTemplate(template));
+      setTemplates(storedTemplates);
     }
   }, []);
 
-  useEffect(() => {
-    const filterLeadMagnets = () => {
-      if (leadMagnetFilter === 'all') {
-        setFilteredLeadMagnets(leadMagnets);
-      } else {
-        setFilteredLeadMagnets(trie.searchLeadMagnets(leadMagnetFilter));
-      }
-    };
-
-    filterLeadMagnets();
-  }, [leadMagnetFilter, trie]);
-
-  useEffect(() => {
-    const filterTemplates = () => {
-      if (templateFilter === 'all') {
-        setFilteredTemplates(templates);
-      } else {
-        setFilteredTemplates(trie.searchTemplates(templateFilter));
-      }
-    };
-
-    filterTemplates();
-  }, [templateFilter, trie]);
-
-  useEffect(() => {
-    const buildTrie = () => {
-      const newTrie = new Trie();
-      leadMagnets.forEach((leadMagnet) => newTrie.insertLeadMagnet(leadMagnet));
-      templates.forEach((template) => newTrie.insertTemplate(template));
-      setTrie(newTrie);
-    };
-
-    buildTrie();
-  }, [leadMagnets, templates]);
+  const handleSearch = (query: string) => {
+    setIsSearching(true);
+    const leadMagnetResults = trie.searchLeadMagnets(query);
+    const templateResults = trie.searchTemplates(query);
+    setSearchResults([...leadMagnetResults, ...templateResults]);
+    setIsSearching(false);
+  };
 
   return (
     <div>
-      <LeadMagnetCard leadMagnets={filteredLeadMagnets} />
-      <TemplateCard templates={filteredTemplates} />
+      <LeadMagnetCard leadMagnets={leadMagnets} />
+      <TemplateCard templates={templates} />
       <AnalyticsCard analytics={analytics} />
       <SettingsCard settings={settings} />
       <PricingCard pricing={pricing} />
       <Accordion>
         <AccordionItem>
-          <AccordionButton>Filter</AccordionButton>
+          <AccordionButton>Search</AccordionButton>
           <AccordionPanel>
-            <Select
-              value={leadMagnetFilter}
-              onChange={(e) => setLeadMagnetFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-              ]}
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search lead magnets and templates"
             />
-            <Select
-              value={templateFilter}
-              onChange={(e) => setTemplateFilter(e.target.value)}
-              options={[
-                { value: 'all', label: 'All' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' },
-              ]}
-            />
+            <button onClick={() => handleSearch(searchTerm)}>Search</button>
+            {isSearching ? (
+              <p>Searching...</p>
+            ) : (
+              <ul>
+                {searchResults.map((result) => (
+                  <li key={result.name}>{result.name}</li>
+                ))}
+              </ul>
+            )}
           </AccordionPanel>
         </AccordionItem>
       </Accordion>
+      <Select
+        value={filterType}
+        onChange={(e) => setFilterType(e.target.value)}
+        options={[
+          { value: '', label: 'All' },
+          { value: 'leadMagnet', label: 'Lead Magnets' },
+          { value: 'template', label: 'Templates' },
+        ]}
+      />
     </div>
   );
 };
