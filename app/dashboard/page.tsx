@@ -128,7 +128,7 @@ class Trie {
     let parent = this.root;
     let path = [];
     while (parent !== node) {
-      for (let child of Object.keys(parent.children)) {
+      for (let child in parent.children) {
         if (parent.children[child] === node) {
           path.push(child);
           parent = parent.children[child];
@@ -137,7 +137,9 @@ class Trie {
       }
     }
     let key = path.pop();
-    delete parent.children[key];
+    if (key) {
+      delete parent.children[key];
+    }
   }
 }
 
@@ -145,34 +147,32 @@ const DashboardPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [leadMagnets, setLeadMagnets] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const trie = new Trie();
+  const [trie, setTrie] = useState(new Trie());
 
   useEffect(() => {
-    // Initialize lead magnets and templates
-    const leadMagnetsData = [
-      { name: 'Lead Magnet 1' },
-      { name: 'Lead Magnet 2' },
-      { name: 'Lead Magnet 3' },
-    ];
-    const templatesData = [
-      { name: 'Template 1' },
-      { name: 'Template 2' },
-      { name: 'Template 3' },
-    ];
-
-    leadMagnetsData.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
-    templatesData.forEach((template) => trie.insertTemplate(template));
-
-    setLeadMagnets(leadMagnetsData);
-    setTemplates(templatesData);
+    const storedLeadMagnets = useLocalStorage('leadMagnets', []);
+    const storedTemplates = useLocalStorage('templates', []);
+    setLeadMagnets(storedLeadMagnets);
+    setTemplates(storedTemplates);
+    const trie = new Trie();
+    storedLeadMagnets.forEach((leadMagnet) => trie.insertLeadMagnet(leadMagnet));
+    storedTemplates.forEach((template) => trie.insertTemplate(template));
+    setTrie(trie);
   }, []);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    const searchedLeadMagnets = trie.searchLeadMagnets(query);
-    const searchedTemplates = trie.searchTemplates(query);
-    setLeadMagnets(searchedLeadMagnets);
-    setTemplates(searchedTemplates);
+    if (query) {
+      const leadMagnets = trie.searchLeadMagnets(query);
+      const templates = trie.searchTemplates(query);
+      setLeadMagnets(leadMagnets);
+      setTemplates(templates);
+    } else {
+      const storedLeadMagnets = useLocalStorage('leadMagnets', []);
+      const storedTemplates = useLocalStorage('templates', []);
+      setLeadMagnets(storedLeadMagnets);
+      setTemplates(storedTemplates);
+    }
   };
 
   return (
@@ -183,27 +183,42 @@ const DashboardPage = () => {
         onChange={(e) => handleSearch(e.target.value)}
         placeholder="Search lead magnets and templates"
       />
-      <h2>Lead Magnets</h2>
-      {leadMagnets.map((leadMagnet) => (
-        <LeadMagnetCard key={leadMagnet.name} leadMagnet={leadMagnet} />
-      ))}
-      <h2>Templates</h2>
-      {templates.map((template) => (
-        <TemplateCard key={template.name} template={template} />
-      ))}
-      <h2>Analytics</h2>
-      <AnalyticsCard />
-      <h2>Settings</h2>
-      <SettingsCard />
-      <h2>Pricing</h2>
-      <PricingCard />
       <Accordion>
         <AccordionItem>
-          <AccordionButton>Accordion Button</AccordionButton>
-          <AccordionPanel>Accordion Panel</AccordionPanel>
+          <AccordionButton>Lead Magnets</AccordionButton>
+          <AccordionPanel>
+            {leadMagnets.map((leadMagnet) => (
+              <LeadMagnetCard key={leadMagnet.id} leadMagnet={leadMagnet} />
+            ))}
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Templates</AccordionButton>
+          <AccordionPanel>
+            {templates.map((template) => (
+              <TemplateCard key={template.id} template={template} />
+            ))}
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Analytics</AccordionButton>
+          <AccordionPanel>
+            <AnalyticsCard />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Settings</AccordionButton>
+          <AccordionPanel>
+            <SettingsCard />
+          </AccordionPanel>
+        </AccordionItem>
+        <AccordionItem>
+          <AccordionButton>Pricing</AccordionButton>
+          <AccordionPanel>
+            <PricingCard />
+          </AccordionPanel>
         </AccordionItem>
       </Accordion>
-      <Select />
     </div>
   );
 };

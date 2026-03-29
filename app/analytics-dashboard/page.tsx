@@ -5,7 +5,12 @@ import { LeadMagnet, LeadMagnetAnalytics } from '../types';
 import AnalyticsChart from '../components/analytics-chart';
 import LeadMagnetCard from '../components/lead-magnet-card';
 import PageLayout from '../components/page-layout';
-import { DateRangePicker, DateRange } from '@mantine/dates';
+import { 
+  DateRangePicker, 
+  DateRange, 
+  DateRangePickerValue, 
+  DateRangePickerSettings 
+} from '@mantine/dates';
 import Loader from '../components/loader';
 
 const AnalyticsDashboardPage = () => {
@@ -85,38 +90,57 @@ const AnalyticsDashboardPage = () => {
     });
   };
 
+  const dateRangePickerSettings: DateRangePickerSettings = {
+    allowSingleDateInRange: true,
+    allowDeselect: true,
+    minDate: new Date('2020-01-01'),
+    maxDate: new Date(),
+    excludeDate: (date) => date.getDay() === 0 || date.getDay() === 6,
+    bounds: [
+      { min: new Date('2020-01-01'), max: new Date('2022-12-31') },
+    ],
+  };
+
   return (
     <PageLayout>
-      {isLoadingLeadMagnets ? (
-        <Loader />
-      ) : (
+      <div>
+        <h1>Lead Magnet Builder Analytics Dashboard</h1>
         <div>
-          {leadMagnets.map((leadMagnet) => (
-            <LeadMagnetCard
-              key={leadMagnet.id}
-              leadMagnet={leadMagnet}
-              isSelected={selectedLeadMagnets.includes(leadMagnet)}
-              onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
-            />
-          ))}
           <DateRangePicker
             value={dateRange}
-            onChange={handleDateRangeChange}
+            onChange={handleDateRangePickerChange}
+            settings={dateRangePickerSettings}
             placeholder="Select date range"
             label="Date range"
+            withinPortal
           />
-          {isLoadingAnalytics ? (
-            <Loader />
-          ) : (
+        </div>
+        {isLoadingLeadMagnets ? (
+          <Loader />
+        ) : (
+          <div>
+            {leadMagnets.map((leadMagnet) => (
+              <LeadMagnetCard
+                key={leadMagnet.id}
+                leadMagnet={leadMagnet}
+                isSelected={selectedLeadMagnets.includes(leadMagnet)}
+                onSelect={(isSelected) => handleLeadMagnetSelect(leadMagnet, isSelected)}
+              />
+            ))}
+          </div>
+        )}
+        {isLoadingAnalytics ? (
+          <Loader />
+        ) : (
+          <div>
             <AnalyticsChart
               analytics={analytics}
               chartType={chartType}
               chartOptions={chartOptions}
-              leadMagnets={selectedLeadMagnets}
             />
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </PageLayout>
   );
 };
